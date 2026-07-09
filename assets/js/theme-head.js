@@ -75,6 +75,7 @@ function temporarilyShowTooltip(text) {
     
     tooltips.forEach(function(tooltip) {
         tooltip.classList.add('is-updating');
+        tooltip.classList.add('is-visible');
     });
     
     setTimeout(function() {
@@ -93,6 +94,10 @@ function temporarilyShowTooltip(text) {
             tooltips.forEach(function(tooltip) {
                 tooltip.textContent = 'Theme';
                 tooltip.classList.remove('is-updating');
+                tooltip.classList.remove('is-visible');
+                if (tooltip.parentElement) {
+                    tooltip.parentElement.blur();
+                }
             });
         }, 200);
     }, 2000);

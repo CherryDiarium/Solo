@@ -265,6 +265,10 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     }
 }
 
+.gh-icon-tooltip.is-visible {
+    opacity: 1;
+}
+
 .gh-icon-tooltip.is-updating {
     opacity: 0 !important;
 }
