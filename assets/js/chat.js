@@ -1,8 +1,22 @@
+import React from 'https://esm.sh/react@18';
+import { createRoot } from 'https://esm.sh/react-dom@18/client';
+// Import react-markdown without ?bundle so it shares the same React instance
+// loaded above. Using ?bundle would cause react-markdown to bundle its own
+// separate React copy, which makes createRoot and ReactMarkdown use different
+// React contexts and silently crash at runtime.
+import ReactMarkdown from 'https://esm.sh/react-markdown@9?deps=react@18,react-dom@18';
+// remark-gfm enables GitHub Flavored Markdown extensions: tables, strikethrough,
+// task lists, and autolinks — none of which are in the CommonMark default.
+import remarkGfm from 'https://esm.sh/remark-gfm@4?deps=react@18,react-dom@18';
+
+// Hoisted outside send() so the array reference is stable across all render()
+// calls during streaming. React compares remarkPlugins by reference; a new
+// array on every chunk would force a full plugin re-evaluation every delta.
+var REMARK_PLUGINS = [remarkGfm];
+
 // AI Assistant chat page (/ask). Conversation is in-memory only and is wiped
 // on every reload by design — nothing is persisted.
-(function () {
-    if (!document.body.classList.contains('ai-chat-page')) return;
-
+if (document.body.classList.contains('ai-chat-page')) {
     var form = document.getElementById('ai-chat-form');
     var input = document.getElementById('ai-chat-input');
     var sendBtn = document.getElementById('ai-chat-send');
@@ -10,11 +24,10 @@
     var messagesEl = document.getElementById('ai-chat-messages');
     var greetingEl = document.getElementById('ai-chat-greeting');
     var ghSite = document.querySelector('.gh-site');
-    if (!form || !input || !messagesEl) return;
 
     // Backend chat endpoint. Override site-wide with Ghost code injection
     // (window.SOLORIUM_AGENT_URL), otherwise use the template's data-endpoint.
-    var ENDPOINT = (window.SOLORIUM_AGENT_URL || form.dataset.endpoint || '').trim();
+    var ENDPOINT = (window.SOLORIUM_AGENT_URL || form?.dataset.endpoint || '').trim();
 
     // Abort the request if the backend doesn't start responding in time, so a
     // hung server falls back to the apology instead of spinning forever.
@@ -86,14 +99,21 @@
     }
 
     function scrollToBottom() {
-        scroll.scrollTop = scroll.scrollHeight;
+        // Use requestAnimationFrame to ensure React has rendered before measuring scrollHeight
+        requestAnimationFrame(() => {
+            scroll.scrollTop = scroll.scrollHeight;
+        });
     }
 
     function addBubble(role, text, extraClass) {
         var bubble = document.createElement('div');
         bubble.className = 'ai-chat-bubble ' + (role === 'user' ? 'is-user' : 'is-agent');
         if (extraClass) bubble.className += ' ' + extraClass;
-        bubble.textContent = text;
+        
+        if (text) {
+            bubble.textContent = text;
+        }
+        
         messagesEl.appendChild(bubble);
         scrollToBottom();
         return bubble;
@@ -203,25 +223,44 @@
 
         var typing = addBubble('assistant', 'Thinking…', 'is-typing');
         var bubble = null;
+        var root = null;
         var acc = '';
 
         function onDelta(chunk) {
             if (!bubble) {
                 typing.remove();
-                bubble = addBubble('assistant', '');
+                bubble = addBubble('assistant', ''); // Create empty bubble
+                root = createRoot(bubble);
             }
             acc += chunk;
-            bubble.textContent = acc;
+            root.render(React.createElement(ReactMarkdown, { remarkPlugins: REMARK_PLUGINS }, acc));
             scrollToBottom();
         }
 
-        function finish() {
+        function finish(err) {
             awaitingReply = false;
             syncSendState();
-            typing.remove();
+            // Only remove typing if onDelta never fired (bubble was never created);
+            // if onDelta did fire, typing was already removed there.
+            if (!bubble) {
+                typing.remove();
+            }
+            if (err) {
+                console.error('[chat] Stream error:', err);
+            }
             if (acc) {
                 // Keep the model's turn in history for multi-turn context.
                 messages.push({ role: 'assistant', content: acc });
+                // Unmount the React root and hand the final rendered HTML back
+                // to the DOM statically. This releases React's memory for the
+                // completed turn and avoids a stale root reference.
+                if (root) {
+                    // Capture the rendered inner HTML before unmounting.
+                    var renderedHTML = bubble.innerHTML;
+                    root.unmount();
+                    bubble.innerHTML = renderedHTML;
+                    root = null;
+                }
             } else {
                 // No text arrived (comms failure or empty stream): apologize.
                 // Not added to history — it's a client-side message, not a turn.
@@ -229,27 +268,31 @@
             }
         }
 
-        streamReply(messages.slice(), onDelta).then(finish, finish);
+        streamReply(messages.slice(), onDelta).then(function () { finish(null); }, finish);
     }
 
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        send();
-    });
-
-    input.addEventListener('input', function () {
-        autoGrow();
-        syncSendState();
-    });
-
-    // Enter sends; Shift+Enter inserts a newline.
-    input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    if (form) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
             send();
-        }
-    });
+        });
+    }
+
+    if (input) {
+        input.addEventListener('input', function () {
+            autoGrow();
+            syncSendState();
+        });
+
+        // Enter sends; Shift+Enter inserts a newline.
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+            }
+        });
+    }
 
     pickGreeting();
     syncSendState();
-})();
+}

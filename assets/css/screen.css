@@ -204,7 +204,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 }
 
 #gh-head .gh-head-brand {
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: 1fr auto auto auto auto;
 }
 
 @media (max-width: 767px) {
@@ -235,6 +235,14 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 
 /* Icon button tooltips
 /* ---------------------------------------------------------- */
+
+a, button {
+    -webkit-tap-highlight-color: rgba(150, 150, 150, 0.2);
+}
+
+.gh-icon-btn {
+    border-radius: 0.8rem;
+}
 
 .gh-has-tooltip {
     position: relative;

@@ -111,6 +111,28 @@
                     <span class="gh-icon-tooltip">Theme</span>
                 </button>
                 <button class="gh-search gh-icon-btn gh-has-tooltip" id="search-button" aria-label="Search this site" data-ghost-search>{{> "icons/search"}}<span class="gh-icon-tooltip">Search</span></button>
+                
+                {{#match @custom.show_account_on_header "Only when logged in"}}
+                    {{#if @member}}
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="account" aria-label="Account">
+                            {{> "icons/account"}}
+                            <span class="gh-icon-tooltip">Account</span>
+                        </button>
+                    {{/if}}
+                {{else match @custom.show_account_on_header "Always"}}
+                    {{#unless @member}}
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="signin" aria-label="Sign in">
+                            {{> "icons/sign-in"}}
+                            <span class="gh-icon-tooltip">Sign in</span>
+                        </button>
+                    {{else}}
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="account" aria-label="Account">
+                            {{> "icons/account"}}
+                            <span class="gh-icon-tooltip">Account</span>
+                        </button>
+                    {{/unless}}
+                {{/match}}
+
                 {{#if @site.navigation}}
                     <button class="gh-burger gh-has-tooltip" aria-label="Toggle menu"><span class="gh-icon-tooltip">Menu</span></button>
                 {{/if}}
@@ -153,23 +175,23 @@
                 <button class="gh-search gh-icon-btn gh-has-tooltip" id="search-button" aria-label="Search this site" data-ghost-search>{{> "icons/search"}}<span class="gh-icon-tooltip">Search</span></button>
                 {{#match @custom.show_account_on_header "Only when logged in"}}
                     {{#if @member}}
-                        <div class="gh-head-members">
-                            <a class="gh-head-btn gh-btn gh-primary-btn" href="#/portal/account" data-portal="account">Account</a>
-                        </div>
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="account" aria-label="Account">
+                            {{> "icons/account"}}
+                            <span class="gh-icon-tooltip">Account</span>
+                        </button>
                     {{/if}}
                 {{else match @custom.show_account_on_header "Always"}}
-                    <div class="gh-head-members">
-                        {{#unless @member}}
-                            {{#unless @site.members_invite_only}}
-                                <a class="gh-head-link" href="#/portal/signin" data-portal="signin">Sign in</a>
-                                <a class="gh-head-btn gh-btn gh-primary-btn" href="#/portal/signup" data-portal="signup">Subscribe</a>
-                            {{else}}
-                                <a class="gh-head-btn gh-btn gh-primary-btn" href="#/portal/signin" data-portal="signin">Sign in</a>
-                            {{/unless}}
-                        {{else}}
-                            <a class="gh-head-btn gh-btn gh-primary-btn" href="#/portal/account" data-portal="account">Account</a>
-                        {{/unless}}
-                    </div>
+                    {{#unless @member}}
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="signin" aria-label="Sign in">
+                            {{> "icons/sign-in"}}
+                            <span class="gh-icon-tooltip">Sign in</span>
+                        </button>
+                    {{else}}
+                        <button class="gh-search gh-icon-btn gh-has-tooltip" data-portal="account" aria-label="Account">
+                            {{> "icons/account"}}
+                            <span class="gh-icon-tooltip">Account</span>
+                        </button>
+                    {{/unless}}
                 {{/match}}
             </div>
         </div>
@@ -228,6 +250,7 @@
     });
 </script>
 
+{{{block "scripts"}}}
 {{ghost_foot}}
 
 </body>

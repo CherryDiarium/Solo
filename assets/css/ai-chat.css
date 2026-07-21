@@ -190,7 +190,6 @@ html:has(body.ai-chat-page) {
     font-family: var(--font-sans);
     font-size: 1.6rem;
     line-height: 1.5;
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
     /* Smoothly recolor with the theme, like the site background. */
     transition: background-color var(--transition-duration) ease,
@@ -202,6 +201,8 @@ html:has(body.ai-chat-page) {
     background-color: var(--ghost-accent-color);
     color: #fff;
     border-bottom-right-radius: 0.4rem;
+    /* User text is raw (not rendered markdown), keep literal whitespace. */
+    white-space: pre-wrap;
 }
 
 .ai-chat-page .ai-chat-bubble.is-agent {
@@ -209,6 +210,94 @@ html:has(body.ai-chat-page) {
     background-color: var(--color-utility-gray);
     color: var(--color-primary-text);
     border-bottom-left-radius: 0.4rem;
+}
+
+/* ---- Markdown content inside agent bubbles ---- */
+
+/* Remove top/bottom margin from the first and last block elements so they sit
+   flush against the bubble's own padding instead of doubling the gap.
+   We cannot use > :first-child because React mounts inside a wrapper div;
+   targeting block elements and zeroing margin on first/last occurrence
+   is the reliable approach. */
+.ai-chat-page .ai-chat-bubble.is-agent p:first-of-type,
+.ai-chat-page .ai-chat-bubble.is-agent h1:first-child,
+.ai-chat-page .ai-chat-bubble.is-agent h2:first-child,
+.ai-chat-page .ai-chat-bubble.is-agent h3:first-child,
+.ai-chat-page .ai-chat-bubble.is-agent ul:first-child,
+.ai-chat-page .ai-chat-bubble.is-agent ol:first-child,
+.ai-chat-page .ai-chat-bubble.is-agent pre:first-child {
+    margin-top: 0;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent p:last-of-type,
+.ai-chat-page .ai-chat-bubble.is-agent h1:last-child,
+.ai-chat-page .ai-chat-bubble.is-agent h2:last-child,
+.ai-chat-page .ai-chat-bubble.is-agent h3:last-child,
+.ai-chat-page .ai-chat-bubble.is-agent ul:last-child,
+.ai-chat-page .ai-chat-bubble.is-agent ol:last-child,
+.ai-chat-page .ai-chat-bubble.is-agent pre:last-child {
+    margin-bottom: 0;
+}
+
+/* Collapse paragraph margins inside list items. react-markdown wraps
+   loose-list items (those separated by blank lines in the source) in <p>
+   tags, which inherit the global paragraph margin and create the large
+   gaps between bullets seen in the screenshots. */
+.ai-chat-page .ai-chat-bubble.is-agent li > p {
+    margin: 0;
+}
+
+/* Tighten the gap between consecutive list items. */
+.ai-chat-page .ai-chat-bubble.is-agent ul,
+.ai-chat-page .ai-chat-bubble.is-agent ol {
+    padding-left: 2rem;
+    margin: 0.4rem 0;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent li + li {
+    margin-top: 0.2rem;
+}
+
+/* GFM table styling. Without these rules the raw pipe characters show. */
+.ai-chat-page .ai-chat-bubble.is-agent table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.8rem 0;
+    font-size: 1.4rem;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent th,
+.ai-chat-page .ai-chat-bubble.is-agent td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.8rem;
+    text-align: left;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent th {
+    background-color: rgba(0, 0, 0, 0.06);
+    font-weight: 600;
+}
+
+/* Inline code and code blocks inside agent bubbles. */
+.ai-chat-page .ai-chat-bubble.is-agent code {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+    background-color: rgba(0, 0, 0, 0.08);
+    padding: 0.15em 0.35em;
+    border-radius: 0.3rem;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent pre {
+    background-color: rgba(0, 0, 0, 0.08);
+    padding: 0.8rem 1rem;
+    border-radius: 0.6rem;
+    overflow-x: auto;
+    margin: 0.6rem 0;
+}
+
+.ai-chat-page .ai-chat-bubble.is-agent pre code {
+    background: none;
+    padding: 0;
 }
 
 /* Typing indicator (shown while awaiting a reply). */
