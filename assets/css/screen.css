@@ -167,15 +167,22 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     background-color: var(--color-border);
 }
 
-.gh-head-menu a {
+.gh-head-menu a,
+.gh-foot-menu a {
     color: inherit;
+    display: inline-block;
+    border-radius: 0.5rem;
+    padding: 0.3em 0.5em;
+    margin: -0.3em -0.5em;
 }
 
 /* Match burger menu thickness to SVG icons */
 .gh-burger {
     margin-left: -6px;
     margin-right: -6px;
+    border-radius: 0.8rem;
 }
+
 
 .gh-burger::before,
 .gh-burger::after {
@@ -236,8 +243,56 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 /* Icon button tooltips
 /* ---------------------------------------------------------- */
 
-a, button {
-    -webkit-tap-highlight-color: rgba(150, 150, 150, 0.2);
+/* Kill native blue tap highlight universally */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Replace with subtle gray fade for touch/coarse-pointer devices only.
+   Scoped to pointer:coarse so desktop mouse clicks are unaffected and
+   drag-and-release does not get stuck on active state. */
+@media (pointer: coarse) {
+    a, button {
+        transition: background-color 0.15s ease;
+    }
+
+    a:active, button:active {
+        background-color: rgba(150, 150, 150, 0.18);
+    }
+
+    /* Exclude inline links within post/page body content */
+    .gh-content p a:active,
+    .gh-content li a:active,
+    .gh-content blockquote a:active,
+    .gh-content figcaption a:active {
+        background-color: transparent;
+    }
+
+    .gh-icon-btn:active,
+    .gh-burger:active {
+        background-color: rgba(150, 150, 150, 0.2);
+    }
+
+    .gh-card-link:active {
+        background-color: rgba(150, 150, 150, 0.1);
+    }
+
+    .gh-navigation-link:active {
+        background-color: rgba(150, 150, 150, 0.18);
+    }
+
+    .gh-toc a.toc-link:active {
+        background-color: rgba(150, 150, 150, 0.18) !important;
+    }
+
+    .gh-btn:active,
+    .kg-btn:active,
+    .kg-header-card-button:active,
+    .gh-button-share:active {
+        background-color: initial;
+        filter: brightness(0.88);
+        transition: filter 0.15s ease;
+    }
 }
 
 .gh-icon-btn {
@@ -494,9 +549,17 @@ a, button {
 /* Post card
 /* ---------------------------------------------------------- */
 
+.gh-card-link {
+    border-radius: 0.8rem;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.1s ease;
+}
+
 .gh-card-link:hover {
     opacity: 1;
 }
+
+
 
 .gh-card-wrapper {
     display: flex;
@@ -1117,6 +1180,8 @@ a, button {
 /* ---------------------------------------------------------- */
 
 .gh-navigation {
+    display: flex;
+    justify-content: space-between;
     grid-column: 1 / span 12;
     font-size: clamp(2rem, 1.7rem + 0.9375vw, 3.2rem);
     font-weight: 600;
@@ -1132,7 +1197,13 @@ a, button {
 }
 
 .gh-navigation-link {
+    display: inline-flex;
+    align-items: center;
     gap: 12px;
+    border-radius: 0.8rem;
+    padding: 0.3em 0.5em;
+    margin: -0.3em -0.5em;
+    transition: background-color 0.15s ease;
 }
 
 
@@ -1255,7 +1326,6 @@ a, button {
 }
 
 .toc-list {
-    overflow: hidden;
     list-style: none;
     padding-left: 1.5rem;
 }
@@ -1271,6 +1341,10 @@ a.toc-link {
     font-size: 16px;
     display: block;
     width: 100%;
+    border-radius: 0.4rem;
+    padding: 0.15em 0.4em;
+    margin: 0 -0.4em;
+    transition: background-color 0.15s ease;
 }
 
 .gh-toc .is-active-link::before {
@@ -1321,6 +1395,7 @@ a.toc-link {
         bottom: 0;
         grid-column: 1/ span 3;
         /* Place the TOC to the left of the content */
+        width: 100%;
         max-width: calc(100% - 6px);
         /* Account for border width */
     }
@@ -1608,7 +1683,7 @@ body main .kg-card.kg-header-card+.kg-card.kg-header-card {
 
 }
 
-@media (max-width: 480px) {
+@media (max-width: 360px) {
     .gh-navigation-text {
         display: none;
     }
