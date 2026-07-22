@@ -14,6 +14,9 @@ import remarkGfm from 'https://esm.sh/remark-gfm@4?deps=react@18,react-dom@18';
 // array on every chunk would force a full plugin re-evaluation every delta.
 var REMARK_PLUGINS = [remarkGfm];
 
+// localStorage key for persisting the user's model choice.
+var MODEL_STORAGE_KEY = 'solorium_chat_model';
+
 // AI Assistant chat page (/ask). Conversation is in-memory only and is wiped
 // on every reload by design — nothing is persisted.
 if (document.body.classList.contains('ai-chat-page')) {
@@ -24,14 +27,139 @@ if (document.body.classList.contains('ai-chat-page')) {
     var messagesEl = document.getElementById('ai-chat-messages');
     var greetingEl = document.getElementById('ai-chat-greeting');
     var ghSite = document.querySelector('.gh-site');
+    var modelSelect = document.getElementById('ai-chat-model-select');
+    var modelWarn = document.getElementById('ai-chat-model-warn');
+    var ctxRing = document.getElementById('ai-chat-ctx-ring');
+    var ctxFill = ctxRing ? ctxRing.querySelector('.ctx-fill') : null;
+
+    // Circumference of the context ring SVG arc (r=14): 2π×14 ≈ 87.96
+    var CTX_RING_CIRCUMFERENCE = 87.96;
 
     // Backend chat endpoint. Override site-wide with Ghost code injection
     // (window.SOLORIUM_AGENT_URL), otherwise use the template's data-endpoint.
     var ENDPOINT = (window.SOLORIUM_AGENT_URL || form?.dataset.endpoint || '').trim();
+    // Models endpoint: same origin as the chat endpoint, just different path.
+    var MODELS_ENDPOINT = ENDPOINT.replace(/\/chat\/?$/, '/chat/models');
 
     // Abort the request if the backend doesn't start responding in time, so a
     // hung server falls back to the apology instead of spinning forever.
     var REQUEST_TIMEOUT_MS = 30000;
+
+    // --- Model selector ---------------------------------------------------
+
+    // Rate-limited model IDs (to show warning icon).
+    var rateLimitedModels = new Set();
+
+    function stripProviderSlug(modelId) {
+        // "openai/gpt-oss-120b" -> "gpt-oss-120b"; "llama-3.3-70b" stays.
+        var slash = modelId.indexOf('/');
+        return slash !== -1 ? modelId.slice(slash + 1) : modelId;
+    }
+
+    function getSelectedModel() {
+        if (!modelSelect || !modelSelect.value) return null;
+        return modelSelect.value;
+    }
+
+    function saveModelPreference(modelId) {
+        try {
+            localStorage.setItem(MODEL_STORAGE_KEY, modelId);
+        } catch (e) { /* quota / private mode */ }
+    }
+
+    function loadModelPreference() {
+        try {
+            return localStorage.getItem(MODEL_STORAGE_KEY) || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function populateModelSelect(models) {
+        if (!modelSelect) return;
+
+        // Clear the placeholder option.
+        modelSelect.innerHTML = '';
+
+        if (!models || models.length === 0) {
+            var none = document.createElement('option');
+            none.value = '';
+            none.disabled = true;
+            none.selected = true;
+            none.textContent = 'No model available';
+            modelSelect.appendChild(none);
+            return;
+        }
+
+        var saved = loadModelPreference();
+        var defaultValue = (saved && models.includes(saved)) ? saved : models[0];
+
+        models.forEach(function (modelId) {
+            var opt = document.createElement('option');
+            opt.value = modelId;
+            opt.textContent = stripProviderSlug(modelId);
+            if (modelId === defaultValue) opt.selected = true;
+            modelSelect.appendChild(opt);
+        });
+
+        modelSelect.addEventListener('change', function () {
+            if (modelSelect.value) {
+                saveModelPreference(modelSelect.value);
+            }
+            // Hide rate-limit warning when the user switches models.
+            setModelRateLimit(modelSelect.value, false);
+        });
+    }
+
+    function setModelRateLimit(modelId, limited) {
+        if (limited) {
+            rateLimitedModels.add(modelId);
+        } else {
+            rateLimitedModels.delete(modelId);
+        }
+        // Show the warning icon only if the *currently selected* model is limited.
+        var current = getSelectedModel();
+        if (modelWarn) {
+            modelWarn.classList.toggle('is-visible', !!current && rateLimitedModels.has(current));
+        }
+    }
+
+    // Fetch available models from the backend.
+    function loadModels() {
+        if (!MODELS_ENDPOINT) return;
+        fetch(MODELS_ENDPOINT)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (data && Array.isArray(data.models)) {
+                    populateModelSelect(data.models);
+                }
+            })
+            .catch(function () { /* backend unreachable — leave placeholder */ });
+    }
+
+    loadModels();
+
+    // --- Context ring -----------------------------------------------------
+
+    function updateCtxRing(contextUsed, contextLimit) {
+        if (!ctxFill || !ctxRing || contextLimit <= 0) return;
+
+        var pct = Math.min(contextUsed / contextLimit, 1);
+        var offset = CTX_RING_CIRCUMFERENCE * (1 - pct);
+        ctxFill.style.strokeDashoffset = offset.toFixed(2);
+
+        // Label the ring with exact usage.
+        var used = contextUsed.toLocaleString();
+        var limit = contextLimit.toLocaleString();
+        var pctStr = (pct * 100).toFixed(1);
+        ctxRing.title = used + ' / ' + limit + ' tokens used (' + pctStr + '%)';
+        ctxRing.setAttribute('aria-label', 'Context window: ' + pctStr + '% used');
+
+        ctxRing.classList.add('has-usage');
+        ctxRing.classList.toggle('is-critical', pct >= 0.8);
+    }
+
+    // --- Visual viewport / keyboard handling ------------------------------
 
     // Pin the layout to the *visible* viewport. visualViewport reflects the
     // real on-screen area after the mobile URL bar collapses and when the
@@ -100,7 +228,7 @@ if (document.body.classList.contains('ai-chat-page')) {
 
     function scrollToBottom() {
         // Use requestAnimationFrame to ensure React has rendered before measuring scrollHeight
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function () {
             scroll.scrollTop = scroll.scrollHeight;
         });
     }
@@ -109,11 +237,11 @@ if (document.body.classList.contains('ai-chat-page')) {
         var bubble = document.createElement('div');
         bubble.className = 'ai-chat-bubble ' + (role === 'user' ? 'is-user' : 'is-agent');
         if (extraClass) bubble.className += ' ' + extraClass;
-        
+
         if (text) {
             bubble.textContent = text;
         }
-        
+
         messagesEl.appendChild(bubble);
         scrollToBottom();
         return bubble;
@@ -139,13 +267,17 @@ if (document.body.classList.contains('ai-chat-page')) {
     // Resolves when the stream ends (with however much text arrived). Throws
     // only on a communication failure (network/CORS/non-2xx/no body), which the
     // caller treats as "can't reach the assistant".
-    function streamReply(history, onDelta) {
+    function streamReply(history, modelId, onDelta, onDone) {
         var controller = new AbortController();
         var timer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
+
+        var body = { messages: history };
+        if (modelId) body.model = modelId;
+
         return fetch(ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: history }),
+            body: JSON.stringify(body),
             signal: controller.signal
         }).then(function (resp) {
             // Response started — cancel the timeout so a long stream isn't cut off.
@@ -174,10 +306,16 @@ if (document.body.classList.contains('ai-chat-page')) {
                     }
                     if (payload.type === 'delta' && payload.text) {
                         onDelta(payload.text);
+                    } else if (payload.type === 'rate_limit') {
+                        // Mark the rate-limited model in the UI.
+                        setModelRateLimit(payload.model || modelId, true);
                     } else if (payload.type === 'error') {
                         // Server-side error: stop reading, keep any text so far.
                         return true;
                     } else if (payload.type === 'done') {
+                        if (onDone && payload.usage) {
+                            onDone(payload.usage);
+                        }
                         return true;
                     }
                 }
@@ -213,6 +351,8 @@ if (document.body.classList.contains('ai-chat-page')) {
         var text = input.value.trim();
         if (!text || awaitingReply) return;
 
+        var selectedModel = getSelectedModel();
+
         document.body.classList.add('has-messages');
         messages.push({ role: 'user', content: text });
         addBubble('user', text);
@@ -235,6 +375,15 @@ if (document.body.classList.contains('ai-chat-page')) {
             acc += chunk;
             root.render(React.createElement(ReactMarkdown, { remarkPlugins: REMARK_PLUGINS }, acc));
             scrollToBottom();
+        }
+
+        function onDone(usage) {
+            if (usage && usage.context_used && usage.context_limit) {
+                updateCtxRing(usage.context_used, usage.context_limit);
+            } else if (usage && usage.total_tokens && usage.context_limit) {
+                // Fallback for older backend versions
+                updateCtxRing(usage.total_tokens, usage.context_limit);
+            }
         }
 
         function finish(err) {
@@ -268,7 +417,7 @@ if (document.body.classList.contains('ai-chat-page')) {
             }
         }
 
-        streamReply(messages.slice(), onDelta).then(function () { finish(null); }, finish);
+        streamReply(messages.slice(), selectedModel, onDelta, onDone).then(function () { finish(null); }, finish);
     }
 
     if (form) {

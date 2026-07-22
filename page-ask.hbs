@@ -22,6 +22,7 @@
     <form class="ai-chat-form" id="ai-chat-form" data-endpoint="https://agent.quangmn.com/chat">
         <div class="ai-chat-col">
             <div class="ai-chat-input-wrap">
+                {{!-- Row 1: expanding textarea --}}
                 <textarea
                     class="ai-chat-input"
                     id="ai-chat-input"
@@ -30,12 +31,47 @@
                     aria-label="Ask the assistant a question"
                     autocomplete="off"
                 ></textarea>
-                <button type="submit" class="ai-chat-send" id="ai-chat-send" aria-label="Send message" disabled>
-                    {{> "icons/arrow-up"}}
-                </button>
+                {{!-- Row 2: model picker (left) + context ring + send button (right) --}}
+                <div class="ai-chat-toolbar">
+                    {{!-- Model selector dropdown --}}
+                    <div class="ai-chat-model-wrap" id="ai-chat-model-wrap">
+                        <select class="ai-chat-model-select" id="ai-chat-model-select" aria-label="Select AI model">
+                            <option value="" disabled selected>No model available</option>
+                        </select>
+                        {{!-- Rate-limit warning icon (hidden by default) --}}
+                        <span class="ai-chat-model-warn" id="ai-chat-model-warn" aria-hidden="true" title="Model is unavailable">
+                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M10 6v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <circle cx="10" cy="13.5" r="0.75" fill="currentColor"/>
+                            </svg>
+                        </span>
+                    </div>
+                    {{!-- Right controls: context ring + send --}}
+                    <div class="ai-chat-actions">
+                        {{!-- Context window usage ring --}}
+                        <div class="ai-chat-ctx-ring" id="ai-chat-ctx-ring" aria-label="Context window usage" title="0 / 0 tokens used (0%)">
+                            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {{!-- Track --}}
+                                <circle cx="18" cy="18" r="14" stroke="currentColor" stroke-width="2.5" class="ctx-track"/>
+                                {{!-- Fill arc — stroke-dashoffset animated in JS --}}
+                                <circle cx="18" cy="18" r="14" stroke="currentColor" stroke-width="2.5"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="87.96"
+                                    stroke-dashoffset="87.96"
+                                    class="ctx-fill"
+                                    transform="rotate(-90 18 18)"/>
+                            </svg>
+                        </div>
+                        <button type="submit" class="ai-chat-send" id="ai-chat-send" aria-label="Send message" disabled>
+                            {{> "icons/arrow-up"}}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </form>
+
 
 </main>
 

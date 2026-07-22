@@ -1,7 +1,7 @@
 {
     "name": "solorium",
     "description": "A custom Ghost theme focused on personal blogging and imagery, with a clean and modern design.",
-    "version": "1.0.16",
+    "version": "1.0.43",
     "engines": {
         "ghost": ">=6.0.0"
     },
@@ -118,15 +118,42 @@
                 "type": "select",
                 "options": [
                     "Classic",
-                    "Typographic",
-                    "Parallax"
+                    "Parallax",
+                    "Typographic"
                 ],
                 "default": "Classic",
+                "group": "homepage"
+            },
+            "cover_idle_timeout": {
+                "type": "select",
+                "options": [
+                    "5 seconds",
+                    "10 seconds",
+                    "15 seconds",
+                    "30 seconds",
+                    "60 seconds",
+                    "Disabled"
+                ],
+                "default": "15 seconds",
                 "group": "homepage"
             },
             "show_restricted_posts": {
                 "type": "boolean",
                 "default": false,
+                "group": "homepage"
+            },
+            "cover_text_shadow": {
+                "type": "boolean",
+                "default": true,
+                "group": "homepage"
+            },
+            "use_dark_mode_cover": {
+                "type": "boolean",
+                "default": false,
+                "group": "homepage"
+            },
+            "dark_mode_cover_image": {
+                "type": "image",
                 "group": "homepage"
             }
         }

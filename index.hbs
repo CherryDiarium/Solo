@@ -1,27 +1,37 @@
 {{!< default}}
 
-<section class="gh-about gh-outer{{#match @custom.header_section_layout "!=" "Typographic profile"}}{{#unless @site.cover_image}} no-image{{/unless}}{{else}}{{#unless @site.icon}} no-image{{/unless}}{{/match}}">
+<section class="gh-about gh-outer{{#match @custom.header_section_layout "!=" "Typographic profile"}}{{#unless @site.cover_image}} no-image{{/unless}}{{else}}{{#unless @site.icon}} no-image{{/unless}}{{/match}}{{#if @custom.use_dark_mode_cover}}{{#if @custom.dark_mode_cover_image}} has-dark-cover{{/if}}{{/if}}"
+    data-idle-timeout="{{@custom.cover_idle_timeout}}">
     <div class="gh-about-inner gh-inner">
         {{#match @custom.header_section_layout "!=" "Typographic profile"}}
             {{#match @custom.header_section_layout "=" "Large background"}}
                 {{#if @site.cover_image}}
-                    <img class="gh-about-image" crossorigin="anonymous"
-                        srcset="{{img_url @site.cover_image size="s"}} 300w,
-                            {{img_url @site.cover_image size="m"}} 720w,
-                            {{img_url @site.cover_image size="l"}} 960w,
-                            {{img_url @site.cover_image size="xl"}} 1200w,
-                            {{img_url @site.cover_image size="xxl"}} 2000w"
-                        sizes="100vw"
+                    <img class="gh-about-image gh-about-image-light" crossorigin="anonymous"
                         src="{{@site.cover_image}}" alt="{{@site.title}}">
+                {{/if}}
+                {{#if @custom.use_dark_mode_cover}}
+                    {{#if @custom.dark_mode_cover_image}}
+                        <img class="gh-about-image gh-about-image-dark" crossorigin="anonymous"
+                            src="{{@custom.dark_mode_cover_image}}" alt="{{@site.title}}">
+                    {{/if}}
                 {{/if}}
             {{else}}
                 {{#if @site.cover_image}}
-                    <img class="gh-about-image" crossorigin="anonymous"
+                    <img class="gh-about-image gh-about-image-light" crossorigin="anonymous"
                         srcset="{{img_url @site.cover_image size="s"}} 300w,
                             {{img_url @site.cover_image size="m"}} 720w"
                         sizes="(max-width: 720px) 100vw, 50vw"
                         src="{{@site.cover_image}}" alt="{{@site.title}}">
-                {{/if}}                
+                {{/if}}
+                {{#if @custom.use_dark_mode_cover}}
+                    {{#if @custom.dark_mode_cover_image}}
+                        <img class="gh-about-image gh-about-image-dark" crossorigin="anonymous"
+                            srcset="{{img_url @custom.dark_mode_cover_image size="s"}} 300w,
+                                {{img_url @custom.dark_mode_cover_image size="m"}} 720w"
+                            sizes="(max-width: 720px) 100vw, 50vw"
+                            src="{{@custom.dark_mode_cover_image}}" alt="{{@site.title}}">
+                    {{/if}}
+                {{/if}}
             {{/match}}
         {{else}}
             {{#if @site.icon}}
@@ -35,12 +45,30 @@
                 const about = document.querySelector('.gh-about');
                 if (!about) return;
 
-                const image = about.querySelector('.gh-about-image');
+                const isDarkMode = document.documentElement.classList.contains('is-dark-mode');
+                const isLightMode = document.documentElement.classList.contains('is-light-mode');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const actuallyDarkMode = isDarkMode || (!isLightMode && prefersDark);
+                
+                const hasDarkCover = about.classList.contains('has-dark-cover');
+                let imageSelector = '.gh-about-image';
+                if (actuallyDarkMode && hasDarkCover) {
+                    imageSelector = '.gh-about-image-dark';
+                } else if (hasDarkCover) {
+                    imageSelector = '.gh-about-image-light';
+                }
+                const image = about.querySelector(imageSelector);
 
-                //about.style.setProperty('--about-height', image.clientWidth * image.naturalHeight / image.naturalWidth + 'px');
-                about.classList.add('initialized');
+                const initCover = () => {
+                    about.classList.add('initialized');
+                };
 
                 if (image) {
+                    if (image.complete) {
+                        setTimeout(initCover, 50);
+                    } else {
+                        image.addEventListener('load', initCover);
+                    }
                     const checkBrightness = () => {
                         const canvas = document.createElement('canvas');
                         canvas.width = 100;
@@ -110,4 +138,4 @@
     </div>
 </main>
 
-{{#contentFor "body_class"}}{{#match @custom.header_section_layout "Side by side"}} has-side-about{{/match}}{{#match @custom.header_section_layout "Large background"}}{{#if @site.cover_image}} is-head-transparent has-background-about{{else}} has-side-about{{/if}}{{/match}}{{#match @custom.header_section_layout "Typographic profile"}}{{#if @site.icon}} has-typographic-about{{else}} has-side-about{{/if}}{{/match}}{{/contentFor}}
+{{#contentFor "body_class"}}{{#match @custom.header_section_layout "Side by side"}} has-side-about{{/match}}{{#match @custom.header_section_layout "Large background"}}{{#if @site.cover_image}} is-head-transparent has-background-about{{else}} has-side-about{{/if}}{{/match}}{{#match @custom.header_section_layout "Typographic profile"}}{{#if @site.icon}} has-typographic-about{{else}} has-side-about{{/if}}{{/match}}{{#if @custom.cover_text_shadow}} has-cover-shadow{{/if}}{{/contentFor}}

@@ -320,16 +320,15 @@ html:has(body.ai-chat-page) {
     margin-bottom: 0.8rem;
 }
 
-/* Rounded rectangle with the same outline as the share button. */
+/* Rounded rectangle that holds both rows. */
 .ai-chat-page .ai-chat-input-wrap {
     display: flex;
-    align-items: flex-end;
-    gap: 0.8rem;
+    flex-direction: column;
+    gap: 0;
     border: 1px solid var(--color-border);
     border-radius: 1.6rem;
-    padding: 0.6rem 0.6rem 0.6rem 1.6rem;
+    padding: 1rem 0.8rem 0.8rem 1.6rem;
     background-color: var(--background-color);
-    /* Transition border + background with the theme, matching the site bg. */
     transition: background-color var(--transition-duration) ease,
                 border-color var(--transition-duration) ease;
 }
@@ -338,9 +337,9 @@ html:has(body.ai-chat-page) {
     border-color: var(--ghost-accent-color);
 }
 
-/* Single line to start; grows upward as content wraps (height set in JS). */
+/* Row 1 — expanding textarea */
 .ai-chat-page .ai-chat-input {
-    flex: 1 1 auto;
+    width: 100%;
     border: 0;
     outline: 0;
     resize: none;
@@ -351,12 +350,143 @@ html:has(body.ai-chat-page) {
     line-height: 1.5;
     max-height: 40vh;
     overflow-y: auto;
-    padding: 0.5rem 0;
+    padding: 0;
     scrollbar-width: thin;
 }
 
 .ai-chat-page .ai-chat-input::placeholder {
     color: var(--color-secondary-text);
+}
+
+/* Row 2 — toolbar: model picker left, actions right */
+.ai-chat-page .ai-chat-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.6rem;
+    gap: 0.8rem;
+}
+
+/* ---- Model selector ---- */
+.ai-chat-page .ai-chat-model-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+/* Naked <select> re-styled to match theme aesthetics. */
+.ai-chat-page .ai-chat-model-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--color-border);
+    border-radius: 0.8rem;
+    background-color: transparent;
+    color: var(--color-secondary-text);
+    font-family: var(--font-sans);
+    font-size: 1.3rem;
+    padding: 0.3rem 2.2rem 0.3rem 0.8rem;
+    cursor: pointer;
+    /* Chevron via inline SVG background image */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.4rem;
+    max-width: 18rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.ai-chat-page .ai-chat-model-select:focus {
+    outline: none;
+    border-color: var(--ghost-accent-color);
+    color: var(--color-primary-text);
+}
+
+/* Dropdown list items highlight */
+.ai-chat-page .ai-chat-model-select option {
+    background-color: var(--background-color);
+    color: var(--color-primary-text);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0.6rem;
+}
+
+/* Custom dropdown panel styling (where supported) */
+.ai-chat-page .ai-chat-model-select:focus option:checked,
+.ai-chat-page .ai-chat-model-select option:hover {
+    background-color: var(--color-utility-gray);
+}
+
+/* Rate-limit warning icon */
+.ai-chat-page .ai-chat-model-warn {
+    display: none; /* hidden until a rate-limit event fires */
+    align-items: center;
+    color: #e57c2a;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    cursor: default;
+    position: relative;
+}
+
+.ai-chat-page .ai-chat-model-warn.is-visible {
+    display: flex;
+}
+
+.ai-chat-page .ai-chat-model-warn svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Tooltip shared base */
+.ai-chat-page [title] {
+    position: relative;
+}
+
+/* ---- Right-side actions: context ring + send ---- */
+.ai-chat-page .ai-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+/* Context window usage ring */
+.ai-chat-page .ai-chat-ctx-ring {
+    width: 2.8rem;
+    height: 2.8rem;
+    cursor: default;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.ai-chat-page .ai-chat-ctx-ring.has-usage {
+    opacity: 1;
+}
+
+.ai-chat-page .ai-chat-ctx-ring svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+/* Track ring: faint, theme-colored */
+.ai-chat-page .ai-chat-ctx-ring .ctx-track {
+    color: var(--color-border);
+}
+
+/* Fill arc: uses accent color, transitions as percentage grows */
+.ai-chat-page .ai-chat-ctx-ring .ctx-fill {
+    color: var(--ghost-accent-color);
+    transition: stroke-dashoffset 0.6s ease, color 0.3s ease;
+}
+
+/* When usage is critical (≥ 80%) turn the fill red */
+.ai-chat-page .ai-chat-ctx-ring.is-critical .ctx-fill {
+    color: #e53e3e;
 }
 
 /* Accent send button, anchored bottom-right. */
@@ -382,11 +512,24 @@ html:has(body.ai-chat-page) {
     cursor: default;
 }
 
-.ai-chat-page .ai-chat-send:not(:disabled):active {
-    transform: scale(0.94);
+@media (pointer: coarse) {
+    .ai-chat-page .ai-chat-send:not(:disabled):active {
+        transform: scale(0.94);
+    }
+}
+
+@media (pointer: fine) {
+    .ai-chat-page .ai-chat-send:not(:disabled):hover {
+        opacity: 0.85;
+    }
+
+    .ai-chat-page .ai-chat-send:not(:disabled):active {
+        transform: scale(0.94);
+    }
 }
 
 .ai-chat-page .ai-chat-send .icon {
     width: 2rem;
     height: 2rem;
 }
+

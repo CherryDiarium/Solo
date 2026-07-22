@@ -12,11 +12,7 @@ function initParallax() {
 
     const image = about.querySelector('.gh-about-image');
 
-    if (!image.naturalWidth) {
-        imagesLoaded(image, function () {
-            about.style.setProperty('--about-height', image.clientWidth * image.naturalHeight / image.naturalWidth + 'px');
-        });
-    }
+
 })();
 
 (function () {
@@ -97,3 +93,54 @@ function initParallax() {
     // Re-run after any dynamic content loads (e.g., pagination)
     document.addEventListener('ghost:card:loaded', fixHeaderCards);
 })();
+
+(function () {
+    // Cover idle fade: hides overlay elements (header, about content, chevron)
+    // after a period of inactivity, revealing only the cover image.
+    if (!document.body.classList.contains('has-background-about')) return;
+
+    const about = document.querySelector('.gh-about');
+    if (!about) return;
+
+    // Parse timeout from data attribute set by index.hbs / package.json config.
+    // Format is "N seconds" (e.g. "15 seconds") or "Disabled".
+    const rawTimeout = (about.dataset.idleTimeout || '').trim();
+    if (!rawTimeout || rawTimeout === 'Disabled') return;
+
+    const match = rawTimeout.match(/^(\d+)/);
+    if (!match) return;
+    const timeoutMs = parseInt(match[1], 10) * 1000;
+
+    const FADE_CLASS = 'cover-ui-hidden';
+    let idleTimer = null;
+    let isHidden = false;
+
+    function hideUI() {
+        if (window.scrollY > 50) return;
+        
+        isHidden = true;
+        document.body.classList.add(FADE_CLASS);
+    }
+
+    function showUI() {
+        if (isHidden) {
+            isHidden = false;
+            document.body.classList.remove(FADE_CLASS);
+        }
+        resetTimer();
+    }
+
+    function resetTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(hideUI, timeoutMs);
+    }
+
+    const events = ['mousemove', 'mousedown', 'touchstart', 'touchmove', 'keydown', 'scroll', 'wheel'];
+    events.forEach(function (evt) {
+        window.addEventListener(evt, showUI, { passive: true });
+    });
+
+    // Start the timer on load
+    resetTimer();
+})();
+

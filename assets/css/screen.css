@@ -141,6 +141,13 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     padding-bottom: 3rem;
 }
 
+@media (max-width: 767px) {
+    .gh-head-inner {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
 /* Unset the brand's fixed 64px height so the row hugs the nav content; the
    fixed height was leaving extra slack (the gap) inside the bar. */
 #gh-head .gh-head-brand {
@@ -179,7 +186,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 /* Match burger menu thickness to SVG icons */
 .gh-burger {
     margin-left: -6px;
-    margin-right: -6px;
+    margin-right: -2px;
     border-radius: 0.8rem;
 }
 
@@ -205,16 +212,53 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 }
 
 @media (max-width: 991px) {
-    .is-head-open:not(.is-head-brand):not(.is-head-dark):not(.is-head-transparent) :is(#gh-head, #gh-head .gh-head-actions) {
-        background-color: var(--background-color);
+    /* Base acrylic menu background (follows dark mode) */
+    .is-head-open #gh-head {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+    html.is-dark-mode .is-head-open #gh-head {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+    }
+
+    /* Override based on cover image brightness when header is transparent (home page) */
+    .is-head-transparent.is-head-open #gh-head,
+    html.is-dark-mode .is-head-transparent.is-head-open #gh-head {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    .is-head-transparent.is-light-bg.is-head-open #gh-head,
+    html.is-dark-mode .is-head-transparent.is-light-bg.is-head-open #gh-head {
+        background-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    /* Hide unused actions container on mobile */
+    .is-head-open .gh-head-actions {
+        display: none !important;
+    }
+
+    /* Keep content visible under acrylic blur and fix layout jump */
+    .is-head-open #gh-main,
+    .is-head-open .gh-main {
+        opacity: 1 !important;
+    }
+    html:not(.is-head-transparent) .is-head-open .gh-main {
+        margin-top: 80px;
     }
 }
 
 #gh-head .gh-head-brand {
-    grid-template-columns: 1fr auto auto auto auto;
+    grid-template-columns: 1fr;
+    grid-auto-flow: column;
+    grid-auto-columns: auto;
 }
 
 @media (max-width: 767px) {
+    html:not(.is-head-transparent) .is-head-open .gh-main {
+        margin-top: 64px;
+    }
+
     #gh-head .gh-head-brand {
         gap: 12px;
     }
@@ -443,7 +487,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     position: absolute;
     inset: 0;
     content: "";
-    background-color: var(--color-black);
+    background-color: #000;
     transition: opacity 1.5s ease;
 }
 
@@ -454,7 +498,9 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 .has-background-about .gh-about-inner {
     display: flex;
     align-items: flex-end;
-    min-height: var(--about-height, 100dvh);
+    justify-content: space-between;
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .has-background-about .gh-about-image {
@@ -466,15 +512,46 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     object-fit: cover;
 }
 
+.has-dark-cover .gh-about-image {
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+}
+
+.has-dark-cover .gh-about-image-dark {
+    opacity: 0;
+    visibility: hidden;
+}
+
+html.is-dark-mode .has-dark-cover .gh-about-image-dark {
+    opacity: 1;
+    visibility: visible;
+}
+
+html.is-dark-mode .has-dark-cover .gh-about-image-light {
+    opacity: 0;
+    visibility: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.is-light-mode) .has-dark-cover .gh-about-image-dark {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    html:not(.is-light-mode) .has-dark-cover .gh-about-image-light {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
 .has-background-about .gh-about-content {
     position: sticky;
-    bottom: calc(var(--gap) + 24px);
+    bottom: 5rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    max-width: 100%;
+    flex: 1;
     margin-top: 200px;
-    margin-bottom: calc(var(--gap) + 24px);
+    margin-bottom: 5rem;
     text-align: left;
 }
 
@@ -499,21 +576,28 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     }
 }
 
+
+
 .cover-arrow {
-    bottom: var(--gap);
     display: inline-flex;
-    ;
-    height: 0;
-    left: 50%;
-    margin-left: -20px;
-    position: absolute;
-    width: 40px;
+    height: auto;
+    width: auto;
+    font-size: clamp(2rem, 0.36vw + 1.83rem, 2.4rem);
+    margin-bottom: calc(5rem + 8px);
+    margin-right: -0.166em;
     z-index: 10;
     align-items: center;
     background-color: transparent;
+    cursor: pointer;
     border: 0;
-    justify-content: center;
+    justify-content: flex-end;
     outline: none;
+    padding: 0;
+}
+
+.cover-arrow svg {
+    width: 1em;
+    height: 1em;
 }
 
 /* Typographic profile about section
@@ -1301,6 +1385,13 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     padding-top: 3rem;
 }
 
+@media (max-width: 767px) {
+    .gh-foot {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+
 .gh-foot-inner {
     display: flex;
     flex-direction: column;
@@ -1734,8 +1825,20 @@ body main .kg-card.kg-header-card+.kg-card.kg-header-card {
     font-family: var(--gh-font-body, var(--font-sans)) !important;
 }
 
-.tag-hash-nav-page .gh-content .kg-button-card .kg-btn:hover {
-    background-color: var(--color-lighter-gray) !important;
+@media (pointer: coarse) {
+    .tag-hash-nav-page .gh-content .kg-button-card .kg-btn {
+        transition: background-color 0.15s ease !important;
+    }
+    
+    .tag-hash-nav-page .gh-content .kg-button-card .kg-btn:active {
+        background-color: rgba(150, 150, 150, 0.18) !important;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .tag-hash-nav-page .gh-content .kg-button-card .kg-btn:hover {
+        background-color: var(--color-lighter-gray) !important;
+    }
 }
 
 .tag-hash-nav-page .gh-content .kg-button-card .kg-btn svg {
@@ -1832,4 +1935,37 @@ button {
 .kg-cta-card,
 .gh-cta {
     border-radius: 0.8rem !important;
+}
+
+/* Cover idle fade
+/* ---------------------------------------------------------- */
+/* When the user is idle on the cover page, overlay UI elements fade out,
+   leaving only the cover image visible. Class is toggled by main.js. */
+
+.has-background-about #gh-head,
+.has-background-about .gh-about-content,
+.has-background-about .cover-arrow {
+    transition:
+        opacity 0.8s ease,
+        visibility 0.8s ease;
+}
+
+body.cover-ui-hidden.has-background-about #gh-head,
+body.cover-ui-hidden.has-background-about .gh-about-content,
+body.cover-ui-hidden.has-background-about .cover-arrow {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body.has-cover-shadow.has-background-about:not(.is-head-open) #gh-head,
+body.has-cover-shadow.has-background-about:not(.is-head-open) .gh-about-content,
+body.has-cover-shadow.has-background-about:not(.is-head-open) .cover-arrow {
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+body.has-cover-shadow.has-background-about:not(.is-head-open) #gh-head svg,
+body.has-cover-shadow.has-background-about:not(.is-head-open) .gh-burger,
+body.has-cover-shadow.has-background-about:not(.is-head-open) .cover-arrow svg {
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 10px rgba(0, 0, 0, 0.2));
 }
