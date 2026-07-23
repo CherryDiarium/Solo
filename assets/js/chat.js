@@ -232,13 +232,22 @@ if (document.body.classList.contains('ai-chat-page')) {
         var vv = window.visualViewport;
         var h = vv ? vv.height : window.innerHeight;
         var offsetTop = vv ? vv.offsetTop : 0;
-        document.documentElement.style.setProperty('--app-height', Math.round(h) + 'px');
+        
+        // Check for Ghost's native announcement bar
+        var annBar = document.querySelector('.gh-announcement-bar');
+        var annHeight = annBar ? annBar.offsetHeight : 0;
+        var visibleAnnHeight = Math.max(0, annHeight - offsetTop);
+        
+        document.documentElement.style.setProperty('--app-height', Math.round(h - visibleAnnHeight) + 'px');
+        
         // Follow the visual viewport's vertical offset. iOS Safari pans the
         // visual viewport down when the keyboard opens; translating the fixed
-        // .gh-site by offsetTop keeps the chat overlaying the visible area
-        // instead of sliding up off-screen.
+        // .gh-site keeps the chat overlaying the visible area instead of sliding
+        // up off-screen. We also translate down by the announcement bar height
+        // to prevent overlapping it.
         if (ghSite) {
-            ghSite.style.transform = offsetTop ? 'translateY(' + Math.round(offsetTop) + 'px)' : '';
+            var topOffset = Math.max(offsetTop, annHeight);
+            ghSite.style.transform = topOffset ? 'translateY(' + Math.round(topOffset) + 'px)' : '';
         }
         // Keyboard heuristic: the visual viewport is much shorter than the
         // layout viewport while the on-screen keyboard is up. Used to tighten
@@ -258,6 +267,14 @@ if (document.body.classList.contains('ai-chat-page')) {
     }
     window.addEventListener('resize', setAppHeight);
     window.addEventListener('orientationchange', setAppHeight);
+    
+    // Re-evaluate if the user closes the announcement bar
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.gh-announcement-bar')) {
+            setTimeout(setAppHeight, 50);
+            setTimeout(setAppHeight, 300);
+        }
+    });
 
     // In-memory conversation history: [{ role: 'user' | 'assistant', content }]
     var messages = [];
