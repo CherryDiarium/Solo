@@ -159,7 +159,7 @@ html:has(body.ai-chat-page) {
     text-align: center;
     padding: 1rem;
     opacity: 0;
-    animation: aiChatDelayedFadeIn 0.3s ease-out 0.3s forwards;
+    animation: aiChatDelayedFadeIn 1.5s ease-out 0.3s forwards;
 }
 
 .ai-chat-page .ai-chat-greeting {

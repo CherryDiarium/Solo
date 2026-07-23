@@ -212,15 +212,18 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
 }
 
 @media (max-width: 991px) {
+
     /* Base acrylic menu background (follows dark mode) */
     .is-head-open #gh-head {
         background-color: rgba(255, 255, 255, 0.3) !important;
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
     }
+
     html.is-dark-mode .is-head-open #gh-head {
         background-color: rgba(0, 0, 0, 0.4) !important;
     }
+
     @media (prefers-color-scheme: dark) {
         html:not(.is-light-mode) .is-head-open #gh-head {
             background-color: rgba(0, 0, 0, 0.4) !important;
@@ -232,7 +235,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     html.is-dark-mode .is-head-transparent.is-head-open #gh-head {
         background-color: rgba(0, 0, 0, 0.4) !important;
     }
-    
+
     .is-head-transparent.is-light-bg.is-head-open #gh-head,
     html.is-dark-mode .is-head-transparent.is-light-bg.is-head-open #gh-head {
         background-color: rgba(255, 255, 255, 0.3) !important;
@@ -248,6 +251,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     .is-head-open .gh-main {
         opacity: 1 !important;
     }
+
     html:not(.is-head-transparent) .is-head-open .gh-main {
         margin-top: 80px;
     }
@@ -301,11 +305,14 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
    Scoped to pointer:coarse so desktop mouse clicks are unaffected and
    drag-and-release does not get stuck on active state. */
 @media (pointer: coarse) {
-    a, button {
+
+    a,
+    button {
         transition: background-color 0.15s ease;
     }
 
-    a:active, button:active {
+    a:active,
+    button:active {
         background-color: rgba(150, 150, 150, 0.18);
     }
 
@@ -541,7 +548,7 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
         opacity: 1;
         visibility: visible;
     }
-    
+
     html:not(.is-light-mode) .has-dark-cover .gh-about-image-light {
         opacity: 0;
         visibility: hidden;
@@ -1128,6 +1135,18 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
 
 :is(.post-template, .page-template) .no-image .gh-content {
     margin-top: clamp(4rem, 2.14vw + 2.97rem, 6.4rem);
+}
+
+.gh-content blockquote {
+    margin: 0;
+}
+
+.gh-content > * + blockquote {
+    margin-top: calc(1.2em * var(--content-spacing-multiplier, 1));
+}
+
+.gh-content > blockquote + * {
+    margin-top: calc(1.2em * var(--content-spacing-multiplier, 1));
 }
 
 .gh-content>[id] {
@@ -1772,6 +1791,7 @@ body main .kg-card.kg-header-card:has(+ .kg-header-card) {
 body main .kg-card.kg-header-card+.kg-card.kg-header-card {
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
+    margin-top: -1px !important;
 }
 
 .gh-article img:not(.kg-header-card-image):not(.gh-author-image):not(.gh-author-icon) {
@@ -1860,7 +1880,7 @@ body main .kg-card.kg-header-card+.kg-card.kg-header-card {
     .tag-hash-nav-page .gh-content .kg-button-card .kg-btn {
         transition: background-color 0.15s ease !important;
     }
-    
+
     .tag-hash-nav-page .gh-content .kg-button-card .kg-btn:active {
         background-color: rgba(150, 150, 150, 0.18) !important;
     }
