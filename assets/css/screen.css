@@ -221,6 +221,11 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     html.is-dark-mode .is-head-open #gh-head {
         background-color: rgba(0, 0, 0, 0.4) !important;
     }
+    @media (prefers-color-scheme: dark) {
+        html:not(.is-light-mode) .is-head-open #gh-head {
+            background-color: rgba(0, 0, 0, 0.4) !important;
+        }
+    }
 
     /* Override based on cover image brightness when header is transparent (home page) */
     .is-head-transparent.is-head-open #gh-head,
@@ -1387,8 +1392,8 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
 
 @media (max-width: 767px) {
     .gh-foot {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+        padding-top: 3rem;
+        padding-bottom: 3rem;
     }
 }
 
@@ -1402,6 +1407,32 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
 .gh-foot-menu {
     font-size: 1.6rem;
     font-weight: 700;
+}
+
+.gh-foot-menu .nav {
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 32px;
+}
+
+@media (max-width: 767px) {
+    .gh-foot-menu .nav {
+        gap: 16px;
+    }
+}
+
+.gh-foot-menu .nav li {
+    margin: 0;
+}
+
+.gh-foot-menu .nav li::before,
+.gh-foot-menu .nav li::after,
+.gh-foot-menu .nav a::before,
+.gh-foot-menu .nav a::after {
+    display: none !important;
+    content: none !important;
 }
 
 .gh-copyright {

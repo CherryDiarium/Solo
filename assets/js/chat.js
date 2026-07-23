@@ -27,7 +27,10 @@ if (document.body.classList.contains('ai-chat-page')) {
     var messagesEl = document.getElementById('ai-chat-messages');
     var greetingEl = document.getElementById('ai-chat-greeting');
     var ghSite = document.querySelector('.gh-site');
-    var modelSelect = document.getElementById('ai-chat-model-select');
+    var modelWrap = document.getElementById('ai-chat-model-wrap');
+    var modelBtn = document.getElementById('ai-chat-model-btn');
+    var modelMenu = document.getElementById('ai-chat-model-menu');
+    var modelName = document.getElementById('ai-chat-model-name');
     var modelWarn = document.getElementById('ai-chat-model-warn');
     var ctxRing = document.getElementById('ai-chat-ctx-ring');
     var ctxFill = ctxRing ? ctxRing.querySelector('.ctx-fill') : null;
@@ -56,9 +59,10 @@ if (document.body.classList.contains('ai-chat-page')) {
         return slash !== -1 ? modelId.slice(slash + 1) : modelId;
     }
 
+    var selectedModelId = null;
+
     function getSelectedModel() {
-        if (!modelSelect || !modelSelect.value) return null;
-        return modelSelect.value;
+        return selectedModelId;
     }
 
     function saveModelPreference(modelId) {
@@ -76,40 +80,98 @@ if (document.body.classList.contains('ai-chat-page')) {
     }
 
     function populateModelSelect(models) {
-        if (!modelSelect) return;
-
-        // Clear the placeholder option.
-        modelSelect.innerHTML = '';
+        if (!modelMenu || !modelBtn) return;
+        modelMenu.innerHTML = '';
 
         if (!models || models.length === 0) {
-            var none = document.createElement('option');
-            none.value = '';
-            none.disabled = true;
-            none.selected = true;
-            none.textContent = 'No model available';
-            modelSelect.appendChild(none);
+            if (modelName) modelName.textContent = 'No model available';
+            modelWrap.classList.add('is-ready');
             return;
         }
 
         var saved = loadModelPreference();
         var defaultValue = (saved && models.includes(saved)) ? saved : models[0];
+        selectedModelId = defaultValue;
 
         models.forEach(function (modelId) {
-            var opt = document.createElement('option');
-            opt.value = modelId;
-            opt.textContent = stripProviderSlug(modelId);
-            if (modelId === defaultValue) opt.selected = true;
-            modelSelect.appendChild(opt);
-        });
+            var li = document.createElement('li');
+            li.dataset.value = modelId;
+            li.setAttribute('role', 'option');
+            
+            var nameSpan = document.createElement('span');
+            nameSpan.textContent = stripProviderSlug(modelId);
+            li.appendChild(nameSpan);
 
-        modelSelect.addEventListener('change', function () {
-            if (modelSelect.value) {
-                saveModelPreference(modelSelect.value);
+            var checkSVG = '<svg class="ai-chat-model-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            li.insertAdjacentHTML('beforeend', checkSVG);
+            
+            if (modelId === defaultValue) {
+                li.classList.add('is-selected');
+                li.setAttribute('aria-selected', 'true');
+                if (modelName) modelName.textContent = nameSpan.textContent;
+            } else {
+                li.setAttribute('aria-selected', 'false');
             }
-            // Hide rate-limit warning when the user switches models.
-            setModelRateLimit(modelSelect.value, false);
+            
+            li.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectModel(modelId, nameSpan.textContent);
+            });
+            
+            modelMenu.appendChild(li);
+        });
+        modelWrap.classList.add('is-ready');
+    }
+
+    function selectModel(modelId, displayName) {
+        selectedModelId = modelId;
+        if (modelName) modelName.textContent = displayName;
+        saveModelPreference(modelId);
+        setModelRateLimit(modelId, false);
+        
+        // Update selected state in menu
+        Array.from(modelMenu.children).forEach(function(child) {
+            if (child.dataset.value === modelId) {
+                child.classList.add('is-selected');
+                child.setAttribute('aria-selected', 'true');
+            } else {
+                child.classList.remove('is-selected');
+                child.setAttribute('aria-selected', 'false');
+            }
+        });
+        
+        closeMenu();
+    }
+
+    function toggleMenu() {
+        if (!modelWrap) return;
+        var isOpen = modelWrap.classList.contains('is-open');
+        if (isOpen) {
+            closeMenu();
+        } else {
+            modelWrap.classList.add('is-open');
+            if (modelBtn) modelBtn.setAttribute('aria-expanded', 'true');
+        }
+    }
+
+    function closeMenu() {
+        if (!modelWrap) return;
+        modelWrap.classList.remove('is-open');
+        if (modelBtn) modelBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (modelBtn) {
+        modelBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleMenu();
         });
     }
+
+    document.addEventListener('click', function(e) {
+        if (modelWrap && !modelWrap.contains(e.target)) {
+            closeMenu();
+        }
+    });
 
     function setModelRateLimit(modelId, limited) {
         if (limited) {
@@ -118,9 +180,8 @@ if (document.body.classList.contains('ai-chat-page')) {
             rateLimitedModels.delete(modelId);
         }
         // Show the warning icon only if the *currently selected* model is limited.
-        var current = getSelectedModel();
         if (modelWarn) {
-            modelWarn.classList.toggle('is-visible', !!current && rateLimitedModels.has(current));
+            modelWarn.classList.toggle('is-visible', !!selectedModelId && rateLimitedModels.has(selectedModelId));
         }
     }
 
@@ -152,7 +213,8 @@ if (document.body.classList.contains('ai-chat-page')) {
         var used = contextUsed.toLocaleString();
         var limit = contextLimit.toLocaleString();
         var pctStr = (pct * 100).toFixed(1);
-        ctxRing.title = used + ' / ' + limit + ' tokens used (' + pctStr + '%)';
+        ctxRing.setAttribute('data-tooltip', used + ' / ' + limit + ' tokens used (' + pctStr + '%)');
+        ctxRing.removeAttribute('title');
         ctxRing.setAttribute('aria-label', 'Context window: ' + pctStr + '% used');
 
         ctxRing.classList.add('has-usage');
@@ -369,11 +431,12 @@ if (document.body.classList.contains('ai-chat-page')) {
         function onDelta(chunk) {
             if (!bubble) {
                 typing.remove();
-                bubble = addBubble('assistant', ''); // Create empty bubble
+                bubble = addBubble('assistant', '', 'is-streaming'); 
                 root = createRoot(bubble);
             }
             acc += chunk;
-            root.render(React.createElement(ReactMarkdown, { remarkPlugins: REMARK_PLUGINS }, acc));
+            // Append a block cursor to the markdown so it renders inline with the text
+            root.render(React.createElement(ReactMarkdown, { remarkPlugins: REMARK_PLUGINS }, acc + ' ▍'));
             scrollToBottom();
         }
 
@@ -393,6 +456,8 @@ if (document.body.classList.contains('ai-chat-page')) {
             // if onDelta did fire, typing was already removed there.
             if (!bubble) {
                 typing.remove();
+            } else {
+                bubble.classList.remove('is-streaming');
             }
             if (err) {
                 console.error('[chat] Stream error:', err);
@@ -400,15 +465,16 @@ if (document.body.classList.contains('ai-chat-page')) {
             if (acc) {
                 // Keep the model's turn in history for multi-turn context.
                 messages.push({ role: 'assistant', content: acc });
-                // Unmount the React root and hand the final rendered HTML back
-                // to the DOM statically. This releases React's memory for the
-                // completed turn and avoids a stale root reference.
                 if (root) {
-                    // Capture the rendered inner HTML before unmounting.
-                    var renderedHTML = bubble.innerHTML;
-                    root.unmount();
-                    bubble.innerHTML = renderedHTML;
-                    root = null;
+                    // Re-render final text without the cursor
+                    root.render(React.createElement(ReactMarkdown, { remarkPlugins: REMARK_PLUGINS }, acc));
+                    
+                    // Wait for React to flush the final render before unmounting
+                    setTimeout(function() {
+                        var renderedHTML = bubble.innerHTML;
+                        root.unmount();
+                        bubble.innerHTML = renderedHTML;
+                    }, 50);
                 }
             } else {
                 // No text arrived (comms failure or empty stream): apologize.

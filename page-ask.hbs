@@ -35,22 +35,26 @@
                 <div class="ai-chat-toolbar">
                     {{!-- Model selector dropdown --}}
                     <div class="ai-chat-model-wrap" id="ai-chat-model-wrap">
-                        <select class="ai-chat-model-select" id="ai-chat-model-select" aria-label="Select AI model">
-                            <option value="" disabled selected>No model available</option>
-                        </select>
-                        {{!-- Rate-limit warning icon (hidden by default) --}}
-                        <span class="ai-chat-model-warn" id="ai-chat-model-warn" aria-hidden="true" title="Model is unavailable">
-                            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-                                <path d="M10 6v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                <circle cx="10" cy="13.5" r="0.75" fill="currentColor"/>
+                        <button class="ai-chat-model-display" id="ai-chat-model-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Select AI model">
+                            <span class="ai-chat-model-name" id="ai-chat-model-name">No model available</span>
+                            {{!-- Rate-limit warning icon (hidden by default) --}}
+                            <span class="ai-chat-model-warn" id="ai-chat-model-warn" title="Model is unavailable">
+                                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2ZM9 6C9 5.44772 9.44772 5 10 5C10.5523 5 11 5.44772 11 6V10C11 10.5523 10.5523 11 10 11C9.44772 11 9 10.5523 9 10V6ZM10 15C10.5523 15 11 14.5523 11 14C11 13.4477 10.5523 13 10 13C9.44772 13 9 13.4477 9 14C9 14.5523 9.44772 15 10 15Z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                            <svg class="ai-chat-select-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
-                        </span>
+                        </button>
+                        {{!-- Custom Dropdown Menu --}}
+                        <ul class="ai-chat-model-menu" id="ai-chat-model-menu" role="listbox" aria-hidden="true">
+                        </ul>
                     </div>
                     {{!-- Right controls: context ring + send --}}
                     <div class="ai-chat-actions">
                         {{!-- Context window usage ring --}}
-                        <div class="ai-chat-ctx-ring" id="ai-chat-ctx-ring" aria-label="Context window usage" title="0 / 0 tokens used (0%)">
+                        <div class="ai-chat-ctx-ring" id="ai-chat-ctx-ring" aria-label="Context window usage" data-tooltip="0 / 0 tokens used (0%)" tabindex="0">
                             <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 {{!-- Track --}}
                                 <circle cx="18" cy="18" r="14" stroke="currentColor" stroke-width="2.5" class="ctx-track"/>

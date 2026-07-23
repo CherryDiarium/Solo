@@ -148,11 +148,18 @@ html:has(body.ai-chat-page) {
     justify-content: flex-end;
 }
 
+@keyframes aiChatDelayedFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 /* Empty-state welcome, vertically + horizontally centered. */
 .ai-chat-page .ai-chat-welcome {
     margin: auto;
     text-align: center;
     padding: 1rem;
+    opacity: 0;
+    animation: aiChatDelayedFadeIn 0.3s ease-out 0.3s forwards;
 }
 
 .ai-chat-page .ai-chat-greeting {
@@ -183,6 +190,17 @@ html:has(body.ai-chat-page) {
     gap: 1.2rem;
 }
 
+@keyframes aiChatFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .ai-chat-page .ai-chat-bubble {
     max-width: 85%;
     padding: 1rem 1.6rem;
@@ -194,6 +212,12 @@ html:has(body.ai-chat-page) {
     /* Smoothly recolor with the theme, like the site background. */
     transition: background-color var(--transition-duration) ease,
                 color var(--transition-duration) ease;
+    animation: aiChatFadeInUp 0.3s ease-out forwards;
+}
+
+/* Gracefully fade in newly generated markdown blocks (paragraphs, lists) during streaming */
+.ai-chat-page .ai-chat-bubble.is-streaming > * {
+    animation: aiChatFadeInUp 0.3s ease-out forwards;
 }
 
 .ai-chat-page .ai-chat-bubble.is-user {
@@ -369,66 +393,171 @@ html:has(body.ai-chat-page) {
 
 /* ---- Model selector ---- */
 .ai-chat-page .ai-chat-model-wrap {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+.ai-chat-page .ai-chat-model-wrap.is-ready {
+    opacity: 1;
+}
+
+/* Ensure the button has no default browser styling */
+button.ai-chat-model-display {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    outline: none;
+}
+
+/* The visual representation of the dropdown trigger */
+.ai-chat-page .ai-chat-model-display {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-}
-
-/* Naked <select> re-styled to match theme aesthetics. */
-.ai-chat-page .ai-chat-model-select {
-    appearance: none;
-    -webkit-appearance: none;
-    border: 1px solid var(--color-border);
+    gap: 0.4rem;
+    padding: 0 0.8rem;
+    height: 3.6rem;
     border-radius: 0.8rem;
+    color: var(--color-primary-text);
     background-color: transparent;
-    color: var(--color-secondary-text);
+    transition: background-color 0.2s ease;
+    /* Offset the padding so the highlight gap matches the bottom edge gap (0.8rem) */
+    margin-left: -0.8rem;
+}
+
+/* Active (dropdown open) and tapped states */
+.ai-chat-page .ai-chat-model-wrap.is-open .ai-chat-model-display,
+.ai-chat-page .ai-chat-model-wrap:active .ai-chat-model-display {
+    background-color: var(--color-lighter-gray);
+    transition: none; /* Instantly appear */
+}
+
+/* Hover state only for cursor devices to prevent sticky hover on touchscreens */
+@media (hover: hover) {
+    .ai-chat-page .ai-chat-model-wrap:hover .ai-chat-model-display {
+        background-color: var(--color-lighter-gray);
+        transition: none;
+    }
+}
+
+/* The displayed model name */
+.ai-chat-page .ai-chat-model-name {
+    font-size: 1.5rem; /* slightly smaller than 1.6rem placeholder */
     font-family: var(--font-sans);
-    font-size: 1.3rem;
-    padding: 0.3rem 2.2rem 0.3rem 0.8rem;
-    cursor: pointer;
-    /* Chevron via inline SVG background image */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1.4rem;
-    max-width: 18rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    transition: border-color 0.2s ease, color 0.2s ease;
 }
 
-.ai-chat-page .ai-chat-model-select:focus {
-    outline: none;
-    border-color: var(--ghost-accent-color);
-    color: var(--color-primary-text);
+/* The chevron icon */
+.ai-chat-page .ai-chat-select-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+    color: inherit;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    transform: rotate(180deg); /* Points upward by default because menu is above */
 }
 
-/* Dropdown list items highlight */
-.ai-chat-page .ai-chat-model-select option {
-    background-color: var(--background-color);
-    color: var(--color-primary-text);
-    padding: 0.6rem 0.8rem;
+.ai-chat-page .ai-chat-model-wrap.is-open .ai-chat-select-icon {
+    transform: rotate(360deg); /* Points downward when open (rotates clockwise) */
+}
+
+/* ---- Custom Dropdown Menu ---- */
+.ai-chat-page .ai-chat-model-menu {
+    --color-dropdown-hover: #f5f5f5;
+    position: absolute;
+    bottom: calc(100% + 0.6rem); /* Pop up above the selector */
+    left: -0.8rem; /* Align perfectly with the highlight */
+    margin: 0;
+    padding: 0.6rem;
+    list-style: none;
+    background-color: #ffffff;
+    border-radius: 0.8rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    min-width: calc(100% + 1.6rem);
+    
+    /* Hidden state */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+/* Dark mode overrides */
+html.is-dark-mode .ai-chat-page .ai-chat-model-menu,
+html.dark-mode .ai-chat-page .ai-chat-model-menu {
+    --color-dropdown-hover: #333333;
+    background-color: #242424;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.is-light-mode):not(.light-mode) .ai-chat-page .ai-chat-model-menu {
+        --color-dropdown-hover: #333333;
+        background-color: #242424;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* Open state */
+.ai-chat-page .ai-chat-model-wrap.is-open .ai-chat-model-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Dropdown list items */
+.ai-chat-page .ai-chat-model-menu li {
+    padding: 0.6rem 1rem;
     border-radius: 0.6rem;
+    color: var(--color-primary-text);
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.2rem; /* Space between text and checkmark */
 }
 
-/* Custom dropdown panel styling (where supported) */
-.ai-chat-page .ai-chat-model-select:focus option:checked,
-.ai-chat-page .ai-chat-model-select option:hover {
-    background-color: var(--color-utility-gray);
+.ai-chat-page .ai-chat-model-menu li:active {
+    background-color: var(--color-dropdown-hover);
 }
 
-/* Rate-limit warning icon */
+@media (hover: hover) {
+    .ai-chat-page .ai-chat-model-menu li:hover {
+        background-color: var(--color-dropdown-hover);
+    }
+}
+
+.ai-chat-page .ai-chat-model-check {
+    width: 1.6rem;
+    height: 1.6rem;
+    color: inherit;
+    opacity: 0; /* Hidden by default */
+    flex-shrink: 0;
+    transition: opacity 0.15s ease;
+}
+
+.ai-chat-page .ai-chat-model-menu li.is-selected .ai-chat-model-check {
+    opacity: 1; /* Visible when selected */
+}
+
+/* Rate-limit warning icon (sits between name and chevron) */
 .ai-chat-page .ai-chat-model-warn {
-    display: none; /* hidden until a rate-limit event fires */
+    display: none; 
     align-items: center;
     color: #e57c2a;
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 1.6rem;
+    height: 1.6rem;
     flex-shrink: 0;
     cursor: default;
     position: relative;
+    z-index: 3; /* Ensure tooltip sits above the native select if hovered */
 }
 
 .ai-chat-page .ai-chat-model-warn.is-visible {
@@ -455,16 +584,78 @@ html:has(body.ai-chat-page) {
 
 /* Context window usage ring */
 .ai-chat-page .ai-chat-ctx-ring {
+    position: relative;
     width: 2.8rem;
     height: 2.8rem;
     cursor: default;
     flex-shrink: 0;
-    opacity: 0.5;
-    transition: opacity 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    outline: none; /* For touchscreen focus/tap */
+}
+
+/* Tooltip pseudo-element */
+.ai-chat-page .ai-chat-ctx-ring::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 0.8rem);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem; /* Less rounded corner */
+    background-color: #ffffff;
+    color: var(--color-primary-text);
+    font-family: var(--font-sans);
+    font-size: 1.3rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 100;
+    
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+html.is-dark-mode .ai-chat-page .ai-chat-ctx-ring::after,
+html.dark-mode .ai-chat-page .ai-chat-ctx-ring::after {
+    background-color: #242424;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.is-light-mode):not(.light-mode) .ai-chat-page .ai-chat-ctx-ring::after {
+        background-color: #242424;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.ai-chat-page .ai-chat-ctx-ring:hover::after,
+.ai-chat-page .ai-chat-ctx-ring:focus::after,
+.ai-chat-page .ai-chat-ctx-ring:active::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+@media (max-width: 767px) {
+    .ai-chat-page .ai-chat-ctx-ring::after {
+        left: auto;
+        right: 0;
+        transform: translateY(4px);
+    }
+    
+    .ai-chat-page .ai-chat-ctx-ring:hover::after,
+    .ai-chat-page .ai-chat-ctx-ring:focus::after,
+    .ai-chat-page .ai-chat-ctx-ring:active::after {
+        transform: translateY(0);
+    }
 }
 
 .ai-chat-page .ai-chat-ctx-ring.has-usage {
     opacity: 1;
+    visibility: visible;
 }
 
 .ai-chat-page .ai-chat-ctx-ring svg {
