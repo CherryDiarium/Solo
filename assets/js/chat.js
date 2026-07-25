@@ -26,7 +26,6 @@ if (document.body.classList.contains('ai-chat-page')) {
     var scroll = document.getElementById('ai-chat-scroll');
     var messagesEl = document.getElementById('ai-chat-messages');
     var greetingEl = document.getElementById('ai-chat-greeting');
-    var ghSite = document.querySelector('.gh-site');
     var modelWrap = document.getElementById('ai-chat-model-wrap');
     var modelBtn = document.getElementById('ai-chat-model-btn');
     var modelMenu = document.getElementById('ai-chat-model-menu');
@@ -223,39 +222,36 @@ if (document.body.classList.contains('ai-chat-page')) {
 
     // --- Visual viewport / keyboard handling ------------------------------
 
-    // Pin the layout to the *visible* viewport. visualViewport reflects the
-    // real on-screen area after the mobile URL bar collapses and when the
-    // on-screen keyboard opens — keeping the composer on screen instead of
-    // letting it slide below an overflow:hidden viewport. CSS falls back to
-    // 100svh until/unless this runs.
+    // The viewport meta tag (see default.hbs) sets interactive-widget=resizes-content,
+    // which makes Chrome 108+ resize the *layout* viewport — and therefore the
+    // `dvh` unit .gh-site's height already falls back to — when the on-screen
+    // keyboard opens. That covers Android with plain CSS, no JS.
+    //
+    // iOS Safari has no equivalent: WebKit doesn't support interactive-widget, and
+    // its dvh unit doesn't react to the keyboard at all. There, visualViewport is
+    // the only signal — it shrinks (and pans down, via offsetTop) while the
+    // layout viewport (window.innerHeight) stays put.
+    //
+    // JS only steps in for a keyboard-sized gap (>150px) or an iOS-style pan
+    // offset — never for the few stray pixels that can separate vv.height from
+    // window.innerHeight at rest (sub-pixel/DPR rounding, or a transient reading
+    // while the announcement bar is being added/removed). Anything smaller is
+    // exactly what `dvh` already tracks live (including the mobile URL bar
+    // collapsing) — locking in a one-off JS pixel value there would freeze
+    // --app-height and stop it from following dvh's own updates.
     function setAppHeight() {
         var vv = window.visualViewport;
-        var h = vv ? vv.height : window.innerHeight;
-        var offsetTop = vv ? vv.offsetTop : 0;
-        
-        // Check for Ghost's native announcement bar
-        var annBar = document.querySelector('.gh-announcement-bar');
-        var annHeight = annBar ? annBar.offsetHeight : 0;
-        var visibleAnnHeight = Math.max(0, annHeight - offsetTop);
-        
-        document.documentElement.style.setProperty('--app-height', Math.round(h - visibleAnnHeight) + 'px');
-        
-        // Follow the visual viewport's vertical offset. iOS Safari pans the
-        // visual viewport down when the keyboard opens; translating the fixed
-        // .gh-site keeps the chat overlaying the visible area instead of sliding
-        // up off-screen. We also translate down by the announcement bar height
-        // to prevent overlapping it.
-        if (ghSite) {
-            var topOffset = Math.max(offsetTop, annHeight);
-            ghSite.style.transform = topOffset ? 'translateY(' + Math.round(topOffset) + 'px)' : '';
+        var kbOpen = !!vv && ((window.innerHeight - vv.height) > 150 || vv.offsetTop > 0);
+
+        if (kbOpen) {
+            document.documentElement.style.setProperty('--app-height', Math.round(vv.height) + 'px');
+            document.body.style.top = vv.offsetTop > 0 ? Math.round(vv.offsetTop) + 'px' : '';
+        } else {
+            document.documentElement.style.removeProperty('--app-height');
+            document.body.style.top = '';
         }
-        // Keyboard heuristic: the visual viewport is much shorter than the
-        // layout viewport while the on-screen keyboard is up. Used to tighten
-        // the gap between the composer and the keyboard.
-        var kbOpen = !!vv && (window.innerHeight - vv.height) > 150;
+
         document.body.classList.toggle('kb-open', kbOpen);
-        // Safeguard: if iOS still nudges the document while the keyboard is up,
-        // snap it back to the top (the fixed body should already prevent this).
         if (kbOpen && window.scrollY !== 0) {
             window.scrollTo(0, 0);
         }
@@ -267,14 +263,6 @@ if (document.body.classList.contains('ai-chat-page')) {
     }
     window.addEventListener('resize', setAppHeight);
     window.addEventListener('orientationchange', setAppHeight);
-    
-    // Re-evaluate if the user closes the announcement bar
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.gh-announcement-bar')) {
-            setTimeout(setAppHeight, 50);
-            setTimeout(setAppHeight, 300);
-        }
-    });
 
     // In-memory conversation history: [{ role: 'user' | 'assistant', content }]
     var messages = [];

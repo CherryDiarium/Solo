@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
     <!-- request search engine to not index if post has hidden tag -->
     {{#post}}
         {{#has tag="#hidden"}}
@@ -79,7 +79,7 @@
     {{ghost_head}}
 </head>
 
-<body class="{{body_class}}{{{block "body_class"}}} is-head-{{#match @custom.navigation_layout "Logo on the left"}}left-logo{{else match @custom.navigation_layout "Logo in the middle"}}middle-logo{{else}}stacked{{/match}}{{#match @custom.typography "Elegant serif"}} has-serif-font{{/match}}{{#match @custom.typography "Consistent mono"}} has-mono-font{{/match}}{{#match @custom.post_feed_layout "Classic"}} has-classic-feed{{/match}}{{#match @custom.post_feed_layout "Typographic"}} has-typographic-feed{{/match}}{{#match @custom.post_feed_layout "Parallax"}} has-parallax-feed{{/match}}">
+<body class="{{body_class}}{{{block "body_class"}}} is-head-{{#match @custom.navigation_layout "Logo on the left"}}left-logo{{else match @custom.navigation_layout "Logo in the middle"}}middle-logo{{else}}stacked{{/match}}{{#match @custom.typography "Elegant serif"}} has-serif-font{{/match}}{{#match @custom.typography "Consistent mono"}} has-mono-font{{/match}}{{#match @custom.post_feed_layout "Classic"}} has-classic-feed{{/match}}{{#match @custom.post_feed_layout "Typographic"}} has-typographic-feed{{/match}}{{#match @custom.post_feed_layout "Parallax"}} has-parallax-feed{{/match}}{{#if @custom.push_footer_out_of_view}} push-footer{{/if}}">
 <div class="gh-site">
 
     <header id="gh-head" class="gh-head gh-outer">

@@ -115,7 +115,9 @@
             </div>
         </div>
         {{#match @custom.header_section_layout "=" "Large background"}}
-        <button class="cover-arrow" id="dismiss-cover">{{> "icons/caret-down"}}</button>
+            {{#match @custom.cover_chevron_visibility "!=" "Hidden"}}
+                <button class="cover-arrow{{#match @custom.cover_chevron_visibility "=" "Icon with label"}} has-label{{/match}}" id="dismiss-cover">{{> "icons/caret-down"}}</button>
+            {{/match}}
         {{/match}}
     </div>
 </section>

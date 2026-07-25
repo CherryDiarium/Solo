@@ -60,6 +60,50 @@ function initParallax() {
     pagination(true, initParallax);
 })();
 
+// Keep the CSS variable --announcement-height in sync with Ghost's native
+// announcement bar height. The cover image uses this to stay at exactly 100dvh
+// minus the bar so there's no excess at the bottom when the bar is visible.
+(function () {
+    var root = document.documentElement;
+
+    function setAnnouncementHeight() {
+        var bar = document.querySelector('.gh-announcement-bar');
+        var h = (bar && bar.offsetHeight) ? bar.offsetHeight : 0;
+        root.style.setProperty('--announcement-height', h + 'px');
+    }
+
+    function nodeContainsBar(node) {
+        return node.nodeType === 1 && (
+            node.classList.contains('gh-announcement-bar') ||
+            (node.querySelector && node.querySelector('.gh-announcement-bar'))
+        );
+    }
+
+    // Set on first load (bar may already be in the DOM).
+    setAnnouncementHeight();
+
+    // Re-measure on resize (bar wraps to two lines on narrow viewports).
+    window.addEventListener('resize', setAnnouncementHeight, { passive: true });
+
+    // Watch for the bar being injected (Ghost loads it async) OR dismissed.
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                if (nodeContainsBar(node)) {
+                    // Bar just appeared — re-measure after it has painted.
+                    requestAnimationFrame(setAnnouncementHeight);
+                }
+            });
+            mutation.removedNodes.forEach(function (node) {
+                if (nodeContainsBar(node)) {
+                    setAnnouncementHeight();
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
 // Strip Ghost's inline min-height/padding from kg-header-card elements
 // so our CSS rules (in screen.css) can control the layout instead.
 (function () {

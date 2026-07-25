@@ -1,7 +1,7 @@
 {
     "name": "solorium",
     "description": "A custom Ghost theme focused on personal blogging and imagery, with a clean and modern design.",
-    "version": "1.0.73",
+    "version": "1.0.95",
     "engines": {
         "ghost": ">=6.0.0"
     },
@@ -42,6 +42,97 @@
         },
         "card_assets": true,
         "custom": {
+            "primary_header": {
+                "type": "text",
+                "default": "Welcome to Solorium",
+                "group": "homepage"
+            },
+            "secondary_header": {
+                "type": "text",
+                "default": "BOTTOM TEXT",
+                "group": "homepage"
+            },
+            "dark_mode_cover_image": {
+                "type": "image",
+                "group": "homepage"
+            },
+            "use_dark_mode_cover": {
+                "type": "boolean",
+                "default": false,
+                "group": "homepage"
+            },
+            "cover_text_shadow": {
+                "type": "boolean",
+                "default": true,
+                "group": "homepage"
+            },
+            "cover_idle_timeout": {
+                "type": "select",
+                "options": [
+                    "5 seconds",
+                    "10 seconds",
+                    "15 seconds",
+                    "30 seconds",
+                    "60 seconds",
+                    "Disabled"
+                ],
+                "default": "15 seconds",
+                "group": "homepage"
+            },
+            "cover_chevron_visibility": {
+                "type": "select",
+                "options": [
+                    "Icon only",
+                    "Icon with label",
+                    "Hidden"
+                ],
+                "default": "Icon only",
+                "group": "homepage"
+            },
+            "header_section_layout": {
+                "type": "select",
+                "options": [
+                    "Large background",
+                    "Side by side",
+                    "Typographic profile"
+                ],
+                "default": "Large background",
+                "group": "homepage"
+            },
+            "post_feed_layout": {
+                "type": "select",
+                "options": [
+                    "Classic",
+                    "Parallax",
+                    "Typographic"
+                ],
+                "default": "Classic",
+                "group": "homepage"
+            },
+            "show_restricted_posts": {
+                "type": "boolean",
+                "default": false,
+                "group": "homepage"
+            },
+            "show_share_button": {
+                "type": "boolean",
+                "default": true,
+                "group": "post"
+            },
+            "show_all_post_tags": {
+                "type": "boolean",
+                "default": true,
+                "group": "post"
+            },
+            "typography": {
+                "type": "select",
+                "options": [
+                    "Modern sans-serif",
+                    "Elegant serif",
+                    "Consistent mono"
+                ],
+                "default": "Modern sans-serif"
+            },
             "default_background_color": {
                 "type": "color",
                 "default": "#fefefa"
@@ -68,93 +159,16 @@
                 ],
                 "default": "Always"
             },
-            "typography": {
-                "type": "select",
-                "options": [
-                    "Modern sans-serif",
-                    "Elegant serif",
-                    "Consistent mono"
-                ],
-                "default": "Modern sans-serif"
-            },
             "footer_text": {
                 "type": "text"
+            },
+            "push_footer_out_of_view": {
+                "type": "boolean",
+                "default": true
             },
             "show_table_of_contents": {
                 "type": "boolean",
                 "default": true
-            },
-            "show_share_button": {
-                "type": "boolean",
-                "default": true,
-                "group": "post"
-            },
-            "show_all_post_tags": {
-                "type": "boolean",
-                "default": true,
-                "group": "post"
-            },
-            "primary_header": {
-                "type": "text",
-                "default": "Welcome to Solorium",
-                "group": "homepage"
-            },
-            "secondary_header": {
-                "type": "text",
-                "default": "BOTTOM TEXT",
-                "group": "homepage"
-            },
-            "header_section_layout": {
-                "type": "select",
-                "options": [
-                    "Large background",
-                    "Side by side",
-                    "Typographic profile"
-                ],
-                "default": "Large background",
-                "group": "homepage"
-            },
-            "post_feed_layout": {
-                "type": "select",
-                "options": [
-                    "Classic",
-                    "Parallax",
-                    "Typographic"
-                ],
-                "default": "Classic",
-                "group": "homepage"
-            },
-            "cover_idle_timeout": {
-                "type": "select",
-                "options": [
-                    "5 seconds",
-                    "10 seconds",
-                    "15 seconds",
-                    "30 seconds",
-                    "60 seconds",
-                    "Disabled"
-                ],
-                "default": "15 seconds",
-                "group": "homepage"
-            },
-            "show_restricted_posts": {
-                "type": "boolean",
-                "default": false,
-                "group": "homepage"
-            },
-            "cover_text_shadow": {
-                "type": "boolean",
-                "default": true,
-                "group": "homepage"
-            },
-            "use_dark_mode_cover": {
-                "type": "boolean",
-                "default": false,
-                "group": "homepage"
-            },
-            "dark_mode_cover_image": {
-                "type": "image",
-                "group": "homepage"
             }
         }
     },

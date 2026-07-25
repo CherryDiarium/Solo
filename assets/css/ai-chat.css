@@ -12,16 +12,30 @@ body.ai-chat-page {
        keyboard open, which scrolled the chat up off-screen into the empty space
        below; a fixed body has nothing to scroll. Combined with --app-height
        (which keeps the input inside the visual viewport), Safari has no reason
-       to scroll at all. */
+       to scroll at all.
+       display:flex + flex-direction:column is what makes room for Ghost's
+       announcement bar: Ghost injects `.gh-announcement-bar` as a normal
+       (position:relative, in-flow) element at the top of body, and this theme's
+       other pages already rely on that ordinary flow to push content down —
+       no CSS variable or JS math involved. .gh-site below is a flex:1 child
+       that fills whatever space is left, so the same thing happens here. */
     position: fixed;
     inset: 0;
     width: 100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     /* The shared theme sets body/​.gh-site min-height:100vh. On mobile 100vh is
        the LARGE viewport (taller than the visible area), which forces the layout
        past the bottom of the screen and pushes the composer out of view. Reset
        it so our svh/--app-height height controls the size. */
     min-height: 0;
+    /* Height cascade: svh (safe minimum) → dvh (dynamic, tracks Chrome Android
+       URL bar correctly without JS) → var(--app-height) once JS runs (adds
+       keyboard tracking for the iOS on-screen keyboard). */
+    height: 100svh;
+    height: 100dvh;
+    height: var(--app-height, 100dvh);
 }
 
 html:has(body.ai-chat-page) {
@@ -29,27 +43,16 @@ html:has(body.ai-chat-page) {
 }
 
 .ai-chat-page .gh-site {
-    /* Fixed + visual-viewport tracking. On iOS Safari the visual viewport pans
-       DOWN when the keyboard opens (visualViewport.offsetTop > 0) while fixed
-       content stays pinned to the layout-viewport top — so the chat slid up out
-       of view. JS translates this by offsetTop (see setAppHeight) to keep it
-       overlaying the visible area. */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+    /* No longer position:fixed — .gh-site is now a normal flex child of body,
+       so it naturally sits below the announcement bar (if present) and fills
+       the rest of body's height. This also means it never needs to know the
+       bar's height itself; the browser's flex layout does that for free. */
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    /* Height chain: ultimate vh fallback -> svh (smallest viewport, so the
-       layout always fits within the visible area) -> a JS-measured exact height
-       (--app-height) from visualViewport, which tracks the URL bar AND the
-       on-screen keyboard. 100dvh is intentionally avoided: it GROWS when the
-       toolbar collapses after load, pushing the composer out of an
-       overflow:hidden viewport (it flashes in, then vanishes). */
-    height: 100vh;
-    height: var(--app-height, 100svh);
-    will-change: transform;
 }
 
 /* Keep the header at its normal height; don't let flex shrink it as the
@@ -334,8 +337,8 @@ html:has(body.ai-chat-page) {
 /* ---------------------------------------------------------- */
 .ai-chat-page .ai-chat-form {
     flex: 0 0 auto;
-    /* 3rem gap from the bottom, plus any device safe-area inset. */
-    margin-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+    /* 2rem gap from the bottom, plus any device safe-area inset. */
+    margin-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* When the on-screen keyboard is up, sit close to it instead of leaving the
