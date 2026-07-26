@@ -221,7 +221,7 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
     transform: rotate(-45deg) scaleY(1.414) !important;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 767px) {
 
     /* Base acrylic menu background (follows dark mode) */
     .is-head-open #gh-head {
@@ -282,13 +282,22 @@ body.page-template.no-toc .no-image .gh-article-header :is(.gh-article-title, .g
         gap: 12px;
     }
 
-    /* The shared theme expands #gh-head to `inset: 0` (full viewport) when the
-       burger menu opens, which covers the announcement bar sitting above
-       .gh-site. Offset the fullscreen menu below it instead so the bar stays
-       visible and unblurred. --announcement-height is kept in sync by main.js. */
+    /* The shared theme expands #gh-head to `inset: 0` (full viewport, z-index
+       3999999) when the burger menu opens, which both covers the announcement
+       bar sitting above .gh-site AND pushes the menu's own logo/close/search
+       row up underneath where the bar actually renders. Push the fullscreen
+       menu down below the bar's real height (kept in sync by main.js via
+       --announcement-height) so the two don't occupy the same space, and
+       raise the bar's z-index as a safety net in case that measurement is
+       ever a frame stale. */
     .is-head-open #gh-head {
         top: var(--announcement-height, 0px);
         height: calc(100% - var(--announcement-height, 0px));
+    }
+
+    body.is-head-open .gh-announcement-bar {
+        position: relative;
+        z-index: 4000000;
     }
 
     /* Prevent the page behind the fullscreen menu from scrolling while it's open. */
@@ -793,7 +802,7 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
     width: auto;
     font-size: clamp(2rem, 0.36vw + 1.83rem, 2.4rem);
     margin-bottom: calc(5rem + 8px - 0.3em);
-    margin-right: -0.166em;
+    margin-right: -0.4875em;
     z-index: 10;
     align-items: center;
     background-color: transparent;
@@ -1016,10 +1025,7 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
     margin-top: clamp(4.8rem, 4rem + 2.5vw, 8rem);
 }
 
-.has-classic-feed .gh-card+.gh-card.no-image,
-.has-classic-feed .gh-card.no-image+.gh-card {
-    margin-top: clamp(8rem, 7.14vw + 4.57rem, 16rem);
-}
+
 
 .has-classic-feed .gh-card-link {
     display: flex;
@@ -2285,6 +2291,7 @@ button {
 /* Card border radii */
 .kg-bookmark-card,
 .kg-bookmark-container,
+.kg-file-card-container,
 .kg-callout-card,
 .kg-cta-card,
 .gh-cta {
@@ -2301,15 +2308,27 @@ button {
     padding-right: 0 !important;
 }
 
-/* Bookmark Card Interactions */
+/* Bookmark & File Card Interactions
+   Unlike the bookmark card, Ghost's own file.css (confirmed against Ghost
+   core's frontend/src/cards/css/file.css) gives .kg-file-card-contents and
+   .kg-file-card-icon no background of their own — only the container
+   (.kg-file-card-container) is painted, and both children stay naturally
+   transparent so the container's fill shows through them. So the highlight
+   below is set on the container ONLY; painting the same translucent color
+   again on the transparent children would double-composite it, making them
+   read visibly darker than the container's exposed padding ring. */
 .kg-bookmark-container,
 .kg-bookmark-title,
 .kg-bookmark-description,
-.kg-bookmark-metadata {
+.kg-bookmark-metadata,
+.kg-file-card-container,
+.kg-file-card-contents,
+.kg-file-card-metadata {
     font-family: var(--gh-font-body, var(--font-sans)) !important;
 }
 
-.kg-bookmark-container {
+.kg-bookmark-container,
+.kg-file-card-container {
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
 }
@@ -2326,6 +2345,56 @@ button {
     pointer-events: none;
 }
 
+/* Both bookmark and file card containers get their background force-reset by
+   OUR OWN @tryghost/shared-theme-assets import (card.css, imported at the top
+   of this file): `.kg-bookmark-card a.kg-bookmark-container:hover` and
+   `.kg-file-card-container:hover` both set `background: var(--background-color,
+   #fff) !important`. The file-card selector ties our own hover rule's
+   specificity exactly (0,2,0) — normally a tie later in the same file would
+   still go to us, but it's too fragile to depend on; the bookmark selector
+   (0,3,1) outright beats a plain `.kg-bookmark-container:hover` rule
+   regardless of order. Prefixing with the real .gh-content ancestor
+   (confirmed via devtools breadcrumb) pushes every highlight rule below to a
+   safely higher specificity than either, independent of import order. */
+
+/* Ghost's own (server-injected) file.css changes the container's border
+   color on hover (rgba(124,139,154,.25) -> .35), a second, blue-tinted
+   "highlight" that doesn't match our own gray fill. Rather than just
+   freezing it back to rest, make it track our own highlight color so the
+   whole card — border included — reads as one unified effect instead of
+   two different-colored ones layered on each other.
+   The :hover half is scoped to (hover:hover)/(pointer:fine) further down,
+   alongside the rest of the hover-only rules — touch devices synthesize a
+   `:hover` on tap that doesn't clear until a tap elsewhere, so leaving it
+   unconditional here would stick the border on the highlight color after
+   the finger lifts. :active clears correctly on every device, so it stays
+   unconditional. */
+.gh-content .kg-file-card a.kg-file-card-container:active {
+    border-color: rgba(150, 150, 150, 0.18) !important;
+}
+
+/* .kg-file-card-icon's ::before is Ghost's own permanent currentColor tint
+   (0.06 at rest, 0.08 on :hover) — leave it alone so it keeps showing on top
+   of our highlight, reading as its own boxed icon with a translucent gray
+   layer over it rather than flattening into one plain fill.
+   Touch devices synthesize a `:hover` on tap that doesn't clear until the
+   user taps elsewhere ("stuck hover"), so Ghost's unconditional :hover rules
+   (this one, and the container's own border-color hover rule below) would
+   leave the icon/border looking permanently brightened after a tap. Cancel
+   both specifically for touch and drive the same brightened look off
+   :active instead, which correctly clears the instant the finger lifts. */
+@media (pointer: coarse) {
+    .kg-file-card a.kg-file-card-container:hover {
+        border-color: rgb(124 139 154 / 25%) !important;
+    }
+    .kg-file-card a.kg-file-card-container:hover .kg-file-card-icon:before {
+        opacity: 0.06 !important;
+    }
+    .kg-file-card a.kg-file-card-container:active .kg-file-card-icon:before {
+        opacity: 0.08 !important;
+    }
+}
+
 @media (pointer: coarse) {
     .kg-bookmark-container,
     .kg-bookmark-content,
@@ -2333,24 +2402,46 @@ button {
     .kg-bookmark-thumbnail::after {
         transition: background-color 0.1s ease;
     }
-    .kg-bookmark-container:active,
-    .kg-bookmark-container:active .kg-bookmark-content,
-    .kg-bookmark-container:active .kg-bookmark-thumbnail {
+    /* Ghost's own file.css sets `transition: all ease-in-out .35s` on the
+       container (0,2,1) — higher specificity than a plain
+       `.kg-file-card-container` selector, so it silently won and made the
+       tap fade noticeably slower than the bookmark card's 0.1s. Matching
+       ancestor prefix + !important guarantees our timing wins instead. */
+    .gh-content .kg-file-card a.kg-file-card-container {
+        transition: background-color 0.1s ease, border-color 0.1s ease !important;
+    }
+    .gh-content .kg-bookmark-container:active,
+    .gh-content .kg-bookmark-container:active .kg-bookmark-content,
+    .gh-content .kg-bookmark-container:active .kg-bookmark-thumbnail,
+    .gh-content .kg-file-card-container:active {
         background-color: rgba(150, 150, 150, 0.18) !important;
     }
-    .kg-bookmark-container:active .kg-bookmark-thumbnail::after {
+    .gh-content .kg-bookmark-container:active .kg-bookmark-thumbnail::after {
         background-color: rgba(150, 150, 150, 0.18) !important;
     }
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .kg-bookmark-container:hover,
-    .kg-bookmark-container:hover .kg-bookmark-content,
-    .kg-bookmark-container:hover .kg-bookmark-thumbnail,
+    /* The bookmark card has no Ghost-imposed transition, so its hover is
+       instant; the file card inherits Ghost's `transition: all .35s` on the
+       container and `transition: opacity .35s` on the icon tint, giving it
+       an unwanted fade-in on mouse hover. Kill both so hover is instant here
+       too, matching the rest of the theme — the fade stays only for touch. */
+    .gh-content .kg-file-card a.kg-file-card-container,
+    .gh-content .kg-file-card-container .kg-file-card-icon:before {
+        transition: none !important;
+    }
+    .gh-content .kg-file-card a.kg-file-card-container:hover {
+        border-color: rgba(150, 150, 150, 0.18) !important;
+    }
+    .gh-content .kg-bookmark-container:hover,
+    .gh-content .kg-bookmark-container:hover .kg-bookmark-content,
+    .gh-content .kg-bookmark-container:hover .kg-bookmark-thumbnail,
+    .gh-content .kg-file-card-container:hover,
     .gh-button-share:hover {
         background-color: rgba(150, 150, 150, 0.18) !important;
     }
-    .kg-bookmark-container:hover .kg-bookmark-thumbnail::after {
+    .gh-content .kg-bookmark-container:hover .kg-bookmark-thumbnail::after {
         background-color: rgba(150, 150, 150, 0.18) !important;
     }
 }

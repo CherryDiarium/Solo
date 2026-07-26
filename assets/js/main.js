@@ -209,6 +209,34 @@ function initParallax() {
     resetTimer();
 })();
 
+// Scroll back to the top when the burger menu opens. The shared theme turns
+// #gh-head into a fullscreen fixed overlay while open; if the page was
+// scrolled when it opens, closing it leaves the header's normal in-flow
+// position out of sync with the (now unlocked) scroll offset. This also
+// keeps the (normal-flow, non-fixed) announcement bar in view, since it only
+// renders at the very top of the document.
+(function () {
+    if (!document.querySelector('.gh-burger')) return;
+
+    function jumpToTop() {
+        // Belt-and-suspenders across engines/quirks modes: window.scrollTo is
+        // the standard path, but some mobile WebViews only honor scrollTop
+        // set directly on the scrolling element.
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
+
+    var wasOpen = document.body.classList.contains('is-head-open');
+    new MutationObserver(function () {
+        var isOpen = document.body.classList.contains('is-head-open');
+        if (isOpen && !wasOpen) {
+            jumpToTop();
+        }
+        wasOpen = isOpen;
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+})();
+
 // Fix: clicking the "..." three-dots nav-more-toggle when the dropdown is already
 // open should close it. Ghost's own dropdown.js only opens on click and closes
 // on "outside click", so clicking the toggle again technically counts as the
