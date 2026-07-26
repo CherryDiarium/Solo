@@ -158,10 +158,11 @@ function initParallax() {
     const FADE_CLASS = 'cover-ui-hidden';
     let idleTimer = null;
     let isHidden = false;
+    let menuOpen = document.body.classList.contains('is-head-open');
 
     function hideUI() {
         if (window.scrollY > 50) return;
-        
+
         isHidden = true;
         document.body.classList.add(FADE_CLASS);
     }
@@ -176,6 +177,8 @@ function initParallax() {
 
     function resetTimer() {
         clearTimeout(idleTimer);
+        // Never schedule a fade-out while the burger menu is open.
+        if (menuOpen) return;
         idleTimer = setTimeout(hideUI, timeoutMs);
     }
 
@@ -184,7 +187,51 @@ function initParallax() {
         window.addEventListener(evt, showUI, { passive: true });
     });
 
+    // Keep the cover visible for as long as the burger menu is open, and
+    // resume the normal idle countdown once it's closed.
+    new MutationObserver(function () {
+        const isOpen = document.body.classList.contains('is-head-open');
+        if (isOpen === menuOpen) return;
+        menuOpen = isOpen;
+
+        if (menuOpen) {
+            clearTimeout(idleTimer);
+            if (isHidden) {
+                isHidden = false;
+                document.body.classList.remove(FADE_CLASS);
+            }
+        } else {
+            resetTimer();
+        }
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
     // Start the timer on load
     resetTimer();
 })();
 
+// Fix: clicking the "..." three-dots nav-more-toggle when the dropdown is already
+// open should close it. Ghost's own dropdown.js only opens on click and closes
+// on "outside click", so clicking the toggle again technically counts as the
+// same element click and doesn't trigger the outside-click close handler.
+// We intercept that case and fire a synthetic outside click ourselves.
+(function () {
+    document.addEventListener('click', function (e) {
+        var toggle = e.target.closest('.nav-more-toggle');
+        if (!toggle) return;
+
+        // Check whether the dropdown is currently open using Ghost's own signals
+        var isOpen = toggle.getAttribute('aria-expanded') === 'true' ||
+                     document.body.classList.contains('is-dropdown-open') ||
+                     (toggle.closest('li') && toggle.closest('li').classList.contains('is-dropdown-open'));
+
+        if (isOpen) {
+            // Prevent Ghost's handler from immediately reopening it
+            e.stopPropagation();
+            // Dispatch a synthetic click on the body to trigger Ghost's outside-click listener
+            // We use setTimeout to ensure this runs after the current event bubbling finishes
+            setTimeout(function() {
+                document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }, 0);
+        }
+    }, true); // useCapture=true so we run BEFORE Ghost's own listener
+})();

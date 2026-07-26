@@ -2,7 +2,6 @@
     <div class="gh-inner">
         {{#post}}
         <article class="gh-article {{post_class}}">
-            {{#if feature_image}}
             <header class="gh-article-header gh-canvas">
                 <h1 class="gh-article-title">{{title}}</h1>
                 {{#if custom_excerpt}}
@@ -50,48 +49,12 @@
                         "icons/share"}} <span class="gh-share-text">Share</span></a>
                     {{/if}}
                 </div>
+                {{#if feature_image}}
                 {{> "feature-image"}}
+                {{/if}}
             </header>
-            {{/if}}
 
             <section class="gh-content gh-canvas">
-                {{#unless feature_image}}
-                <header class="gh-article-header">
-                    <h1 class="gh-article-title">{{title}}</h1>
-                    {{#if custom_excerpt}}
-                    <p class="gh-article-excerpt">{{custom_excerpt}}</p>
-                    {{/if}}
-                    <div class="gh-article-meta">
-                        <div class="gh-article-meta-wrapper">
-                            <div class="gh-author-name-list">
-                                {{authors}}
-                            </div>
-                            <div class="gh-card-meta">
-                                <time class="gh-article-date" datetime="{{date format=" YYYY-MM-DD"}}">{{date format="DD
-                                    MMM YYYY"}}</time>
-                                {{#if reading_time}}
-                                <span class="gh-article-date">{{reading_time}}</span>
-                                {{/if}}
-                                {{#if tags}}
-                                    {{#if @custom.show_all_post_tags}}
-                                        {{#foreach tags}}
-                                        <a class="gh-article-date" href="{{url}}">{{name}}</a>
-                                        {{/foreach}}
-                                    {{else}}
-                                        {{#foreach tags limit="1"}}
-                                        <a class="gh-article-date" href="{{url}}">{{name}}</a>
-                                        {{/foreach}}
-                                    {{/if}}
-                                {{/if}}
-                            </div>
-                        </div>
-                        {{#if @custom.show_share_button}}
-                        <a href="#/share" class="gh-button-share" aria-label="Share this post" title="Share post">{{>
-                            "icons/share"}} <span class="gh-share-text">Share</span></a>
-                        {{/if}}
-                    </div>
-                </header>
-                {{/unless}}
                 {{content}}
                 {{#if @custom.show_table_of_contents}}
                 {{^has tag="#no-toc"}}

@@ -433,15 +433,16 @@ button.ai-chat-model-display {
 /* Active (dropdown open) and tapped states */
 .ai-chat-page .ai-chat-model-wrap.is-open .ai-chat-model-display,
 .ai-chat-page .ai-chat-model-wrap:active .ai-chat-model-display {
-    background-color: var(--color-lighter-gray);
-    transition: none; /* Instantly appear */
+    background-color: rgba(150, 150, 150, 0.18) !important;
 }
 
 /* Hover state only for cursor devices to prevent sticky hover on touchscreens */
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
+    .ai-chat-page .ai-chat-model-display {
+        transition: none !important;
+    }
     .ai-chat-page .ai-chat-model-wrap:hover .ai-chat-model-display {
-        background-color: var(--color-lighter-gray);
-        transition: none;
+        background-color: rgba(150, 150, 150, 0.18) !important;
     }
 }
 
@@ -528,12 +529,15 @@ html.dark-mode .ai-chat-page .ai-chat-model-menu {
 }
 
 .ai-chat-page .ai-chat-model-menu li:active {
-    background-color: var(--color-dropdown-hover);
+    background-color: rgba(150, 150, 150, 0.18) !important;
 }
 
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
+    .ai-chat-page .ai-chat-model-menu li {
+        transition: none !important;
+    }
     .ai-chat-page .ai-chat-model-menu li:hover {
-        background-color: var(--color-dropdown-hover);
+        background-color: rgba(150, 150, 150, 0.18) !important;
     }
 }
 
