@@ -501,6 +501,42 @@ html.dark-mode .gh-dropdown {
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent shared-theme hover dim effects from firing on touch devices.
+   Ghost's shared-theme has unconditional :hover rules (a:hover opacity:0.8,
+   .gh-foot a:hover, .gh-search:hover opacity:0.9, .gh-btn:hover opacity:0.95,
+   .gh-text-btn:hover opacity:0.8) that trigger as "stuck hover" on tap.
+   Override them to opacity:1 for touch/coarse pointers (using !important
+   to beat higher-specificity rules), and re-add the dim only for true
+   mouse hover. */
+@media (hover: none), (pointer: coarse) {
+    a:hover,
+    .gh-search:hover,
+    .gh-btn:hover,
+    .kg-btn:hover,
+    .gh-text-btn:hover {
+        opacity: 1 !important;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    a:hover {
+        opacity: 0.8;
+    }
+
+    .gh-search:hover {
+        opacity: 0.9;
+    }
+
+    .gh-btn:hover,
+    .kg-btn:hover {
+        opacity: 0.95;
+    }
+
+    .gh-text-btn:hover {
+        opacity: 0.8;
+    }
+}
+
 /* Replace with subtle gray fade for touch/coarse-pointer devices only.
    Scoped to pointer:coarse so desktop mouse clicks are unaffected and
    drag-and-release does not get stuck on active state. */
@@ -852,6 +888,14 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
     }
 }
 
+/* Hover dim for cover arrow — mouse only */
+@media (hover: hover) and (pointer: fine) {
+    .cover-arrow:hover {
+        opacity: 0.8;
+        transition: none !important;
+    }
+}
+
 .has-serif-font:not([class*=" gh-font-heading"]):not([class^="gh-font-heading"]):not([class*=" gh-font-body"]):not([class^="gh-font-body"]) .cover-arrow.has-label::before {
     font-family: var(--gh-font-body, var(--font-serif));
 }
@@ -939,8 +983,11 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
     font-family: var(--gh-font-heading, var(--font-mono));
 }
 
-.gh-card-link:hover .gh-card-title {
-    opacity: 0.8;
+/* Title dim on hover — mouse only; touch must not trigger this */
+@media (hover: hover) and (pointer: fine) {
+    .gh-card-link:hover .gh-card-title {
+        opacity: 0.8;
+    }
 }
 
 .gh-card-meta {
@@ -1161,8 +1208,11 @@ html.is-dark-mode .has-dark-cover .gh-about-image-light {
     transition: opacity 0.4s;
 }
 
-.has-parallax-feed .gh-card:not(.no-image):hover .gh-card-link::before {
-    opacity: 0.4;
+/* Parallax overlay brightness change on hover — mouse only */
+@media (hover: hover) and (pointer: fine) {
+    .has-parallax-feed .gh-card:not(.no-image):hover .gh-card-link::before {
+        opacity: 0.4;
+    }
 }
 
 .has-parallax-feed .gh-card-image {
@@ -1761,6 +1811,20 @@ a.gh-article-date {
 .gh-foot-menu .nav a::after {
     display: none !important;
     content: none !important;
+}
+
+/* Shared-theme's .gh-foot a:hover changes `color` to --color-darker-gray,
+   which on touch acts as a stuck dim. Reset it on touch; restore for mouse. */
+@media (hover: none), (pointer: coarse) {
+    .gh-foot a:hover {
+        color: var(--color-secondary-text) !important;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .gh-foot a:hover {
+        color: var(--color-darker-gray);
+    }
 }
 
 .gh-copyright {
@@ -2464,10 +2528,7 @@ button {
 }
 
 .has-background-about .cover-arrow {
-    transition:
-        opacity 0.8s ease,
-        visibility 0.8s ease,
-        background-color 0.15s ease;
+    transition: background-color 0.15s ease;
 }
 
 body.cover-ui-hidden.has-background-about #gh-head,
@@ -2476,6 +2537,10 @@ body.cover-ui-hidden.has-background-about .cover-arrow {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    transition:
+        opacity 0.8s ease,
+        visibility 0.8s ease,
+        background-color 0.15s ease;
 }
 
 body.has-cover-shadow.has-background-about:not(.is-head-open) #gh-head,
